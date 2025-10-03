@@ -24,7 +24,7 @@ export default function IndexPage() {
       <div className="relative z-10 w-full max-w-md px-6 sm:px-0">
         <div className="mb-10 animate-fade-in text-center">
           <TextShowcase />
-          <div className="mx-auto mt-3 h-0.5 w-16 bg-[#F15A24]" />
+          <div className="mx-auto h-0.5 w-16 bg-[#F15A24]" />
         </div>
 
         <div className="space-y-4">
