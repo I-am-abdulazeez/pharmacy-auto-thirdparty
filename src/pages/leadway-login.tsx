@@ -44,7 +44,7 @@ export default function LeadwayLoginPage() {
     ) {
       setAuthState((prev) => ({ ...prev, user: backdoorUser }));
       setApiError("");
-      navigate("/enrollees");
+      navigate("/pharmacy");
 
       return;
     }
