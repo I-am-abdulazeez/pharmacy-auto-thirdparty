@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
 import PortalCard from "@/components/portal-card";
+import TextShowcase from "@/components/text-showcase";
 
 const portals = [
   {
@@ -21,19 +22,7 @@ export default function IndexPage() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="px-6 sm:px-0 w-full max-w-md">
-        <div className="mb-7">
-          {/* Logo */}
-
-          <img alt="Logo" className="mx-auto h-16 w-auto" src="/logo.png" />
-
-          <h1 className="text-3xl text-center font-figtree font-bold text-[#1A1A1A]">
-            Where genuine care meets{" "}
-            <span className="text-[#f15A24]">unparalleled service.</span>
-          </h1>
-          <p className="mt-6 text-md font-medium">
-            Log in to request a prescription refill for an Enrollee
-          </p>
-        </div>
+        <TextShowcase />
 
         <div className="space-y-4">
           {portals.map((portal, index) => (
