@@ -1,60 +1,56 @@
-import { Link } from "@heroui/link";
-import { Snippet } from "@heroui/snippet";
-import { Code } from "@heroui/code";
-import { button as buttonStyles } from "@heroui/theme";
+import { useNavigate } from "react-router-dom";
 
-import { siteConfig } from "@/config/site";
-import { title, subtitle } from "@/components/primitives";
-import { GithubIcon } from "@/components/icons";
-import DefaultLayout from "@/layouts/default";
+import PortalCard from "@/components/portal-card";
+
+const portals = [
+  {
+    title: "Leadway Health",
+    // description: "Register and manage your vendor applications",
+    path: "/leadway-login",
+  },
+  {
+    title: "Provider Log-in",
+    // description: "Administrative access for system management",
+    path: "/provider-login",
+  },
+];
 
 export default function IndexPage() {
+  const navigate = useNavigate();
+
   return (
-    <DefaultLayout>
-      <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
-        <div className="inline-block max-w-lg text-center justify-center">
-          <span className={title()}>Make&nbsp;</span>
-          <span className={title({ color: "violet" })}>beautiful&nbsp;</span>
-          <br />
-          <span className={title()}>
-            websites regardless of your design experience.
-          </span>
-          <div className={subtitle({ class: "mt-4" })}>
-            Beautiful, fast and modern React UI library.
-          </div>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="px-6 sm:px-0 w-full max-w-md">
+        <div className="mb-7">
+          {/* Logo */}
+
+          <img alt="Logo" className="mx-auto h-16 w-auto" src="/logo.png" />
+
+          <h1 className="text-3xl text-center font-figtree font-bold text-[#1A1A1A]">
+            Where genuine care meets{" "}
+            <span className="text-[#f15A24]">unparalleled service.</span>
+          </h1>
+          <p className="mt-6 text-md font-medium">
+            Log in to request a prescription refill for an Enrollee
+          </p>
         </div>
 
-        <div className="flex gap-3">
-          <Link
-            isExternal
-            className={buttonStyles({
-              color: "primary",
-              radius: "full",
-              variant: "shadow",
-            })}
-            href={siteConfig.links.docs}
-          >
-            Documentation
-          </Link>
-          <Link
-            isExternal
-            className={buttonStyles({ variant: "bordered", radius: "full" })}
-            href={siteConfig.links.github}
-          >
-            <GithubIcon size={20} />
-            GitHub
-          </Link>
+        <div className="space-y-4">
+          {portals.map((portal, index) => (
+            <PortalCard
+              key={index}
+              title={portal.title}
+              onClick={() => navigate(portal.path)}
+            />
+          ))}
         </div>
 
-        <div className="mt-8">
-          <Snippet hideCopyButton hideSymbol variant="bordered">
-            <span>
-              Get started by editing{" "}
-              <Code color="primary">pages/index.tsx</Code>
-            </span>
-          </Snippet>
+        <div className="text-center mt-3">
+          <p className="text-xs text-gray-500">
+            Select the appropriate portal for your role
+          </p>
         </div>
-      </section>
-    </DefaultLayout>
+      </div>
+    </div>
   );
 }
