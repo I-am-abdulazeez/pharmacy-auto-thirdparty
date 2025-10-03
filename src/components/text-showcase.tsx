@@ -11,12 +11,12 @@ export default function TextShowcase({
         src="/leadway-logo.png"
       />
 
-      <h1 className="text-[25px] text-center font-bold text-[#1A1A1A]">
+      <h1 className="text-[18px] text-center font-bold text-[#1A1A1A]">
         Where genuine care meets{" "}
         <span className="text-[#f15A24]">unparalleled service.</span>
       </h1>
       {showDescription && (
-        <p className="mt-6 text-md font-medium text-center text-gray-600">
+        <p className="mt-6 text-sm lg:text-md font-medium text-center text-gray-600">
           Log in to request a prescription refill for an Enrollee
         </p>
       )}
