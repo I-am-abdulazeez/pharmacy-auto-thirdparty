@@ -11,6 +11,9 @@ import { BaseForm } from "@/types";
 import { authStore } from "@/lib/store/app-store";
 import { backdoorUser } from "@/lib/constants";
 import TextShowcase from "@/components/text-showcase";
+import GridPattern from "@/components/grid-pattern";
+import CardContainer from "@/components/card-container";
+import ShineEffect from "@/components/effects/shine";
 
 export default function LeadwayLoginPage() {
   const navigate = useNavigate();
@@ -65,78 +68,115 @@ export default function LeadwayLoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="px-6 sm:px-0 w-full max-w-md">
-        <TextShowcase showDescription={false} />
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gray-50">
+      <GridPattern />
 
-        {apiError && <ErrorText text={apiError} />}
-        <div className="mb-4">
-          <Input
-            errorMessage={
-              isEmailInvalid ? "Please enter a valid email address" : ""
-            }
-            isDisabled={isLoading}
-            isInvalid={isEmailInvalid}
-            label="Email"
-            placeholder="Enter your email (e.g. user@leadway.com)"
-            radius="sm"
-            size="lg"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-          />
-        </div>
-        <div className="mb-4">
-          <Input
-            endContent={
-              <button
-                aria-label="toggle password visibility"
-                className="focus:outline-none"
-                type="button"
-                onClick={toggleVisibility}
-              >
-                {isVisible ? (
-                  <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-                ) : (
-                  <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-                )}
-              </button>
-            }
-            isDisabled={isLoading}
-            label="Password"
-            placeholder="Enter your password"
-            radius="sm"
-            size="lg"
-            type={isVisible ? "text" : "password"}
-            value={formData.password}
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
-          />
-        </div>
-        <div className="flex flex-col gap-4 mt-6 justify-center">
+      <div className="relative px-6 sm:px-0 w-full max-w-md">
+        <CardContainer>
+          <div className="mb-6">
+            <TextShowcase showDescription={false} />
+          </div>
+
+          {apiError && (
+            <div className="mb-4 animate-[shake_0.3s_ease-in-out]">
+              <ErrorText text={apiError} />
+            </div>
+          )}
+
+          <div className="mb-4 group">
+            <div className="relative">
+              <Input
+                classNames={{
+                  input: "transition-all duration-300",
+                  inputWrapper:
+                    "transition-all duration-300 group-hover:border-[#F15A24]",
+                }}
+                errorMessage={
+                  isEmailInvalid ? "Please enter a valid email address" : ""
+                }
+                isDisabled={isLoading}
+                isInvalid={isEmailInvalid}
+                label="Email"
+                placeholder="Enter your email (e.g. user@leadway.com)"
+                radius="sm"
+                size="lg"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+              />
+              <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#F15A24] transition-all duration-300 group-focus-within:w-full" />
+            </div>
+          </div>
+
+          <div className="mb-6 group">
+            <div className="relative">
+              <Input
+                classNames={{
+                  input: "transition-all duration-300",
+                  inputWrapper:
+                    "transition-all duration-300 group-hover:border-[#F15A24]",
+                }}
+                endContent={
+                  <button
+                    aria-label="toggle password visibility"
+                    className="focus:outline-none transition-transform duration-200 hover:scale-110"
+                    type="button"
+                    onClick={toggleVisibility}
+                  >
+                    {isVisible ? (
+                      <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                    ) : (
+                      <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                    )}
+                  </button>
+                }
+                isDisabled={isLoading}
+                label="Password"
+                placeholder="Enter your password"
+                radius="sm"
+                size="lg"
+                type={isVisible ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+              />
+              {/* Input focus indicator */}
+              <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#F15A24] transition-all duration-300 group-focus-within:w-full" />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 justify-center">
+            <Button
+              fullWidth
+              className="font-bold text-medium text-white relative overflow-hidden group/btn transition-all duration-300 hover:scale-[1.02]"
+              color="warning"
+              isDisabled={!isFormValid || isLoading}
+              isLoading={isLoading}
+              radius="full"
+              size="lg"
+              onPress={handleLogin}
+            >
+              <ShineEffect />
+              <span className="relative z-10">
+                {isLoading ? "Logging in..." : "Sign in"}
+              </span>
+            </Button>
+          </div>
+
           <Button
             fullWidth
-            className="font-bold text-medium text-white bg-red-600"
-            isDisabled={!isFormValid || isLoading}
-            isLoading={isLoading}
-            radius="sm"
+            className="mt-4 font-semibold text-medium text-[#1A1A1A] bg-gray-200 hover:bg-gray-300 transition-all duration-300 hover:scale-[1.02] relative overflow-hidden group/back"
+            radius="full"
             size="lg"
-            onPress={handleLogin}
+            variant="flat"
+            onPress={() => navigate("/")}
           >
-            {isLoading ? "Logging in..." : "Sign in"}
+            <ShineEffect />
+            <span className="relative z-10">Go Back</span>
           </Button>
-        </div>
-        <Button
-          fullWidth
-          className="mt-4 font-semibold text-medium text-[#1A1A1A] bg-gray-200 hover:bg-gray-300"
-          size="lg"
-          variant="flat"
-          onPress={() => navigate("/")}
-        >
-          Go Back
-        </Button>
+        </CardContainer>
       </div>
     </div>
   );
