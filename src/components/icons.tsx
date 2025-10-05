@@ -180,18 +180,13 @@ export const DeliveryIcon = (props: IconSvgProps) => (
 
 export const ToggleIcon = (props: IconSvgProps) => (
   <svg
-    className="h-6 w-6"
-    fill="none"
-    stroke="currentColor"
+    fill="currentColor"
+    height="24"
     viewBox="0 0 24 24"
+    width="24"
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
-    <path
-      d="M4 6h16M4 12h16M4 18h16"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={0.3}
-    />
+    <path d="M4 6h16v2H4zM4 11h16v2H4zM4 16h16v2H4z" />
   </svg>
 );
