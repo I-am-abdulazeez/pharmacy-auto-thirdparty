@@ -48,3 +48,9 @@ export const backdoorUser: User = {
   function: null,
   rightofconnection: null,
 };
+
+export const PROVIDERS_COLUMNS = [
+  { key: "serial", label: "S/N" },
+  { key: "provider", label: "PROVIDER" },
+  { key: "ProviderAddress", label: "ADDRESS" },
+];
