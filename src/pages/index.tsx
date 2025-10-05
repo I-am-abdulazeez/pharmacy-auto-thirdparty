@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@heroui/button";
 
-import TextShowcase from "@/components/text-showcase";
+import TextShowcase from "@/components/ui/text-showcase";
 
 const portals = [
   {
