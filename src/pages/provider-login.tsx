@@ -4,15 +4,15 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { useChunk } from "stunk/react";
 
-import { ErrorText } from "@/components/error-text";
+import { ErrorText } from "@/components/ui/error-text";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/icons";
 import { loginProvider } from "@/lib/services/login-user";
 import { BaseForm } from "@/types";
 import { authStore } from "@/lib/store/app-store";
 import { backdoorUser } from "@/lib/constants";
-import TextShowcase from "@/components/text-showcase";
-import GridPattern from "@/components/grid-pattern";
-import CardContainer from "@/components/card-container";
+import TextShowcase from "@/components/ui/text-showcase";
+import GridPattern from "@/components/ui/grid-pattern";
+import CardContainer from "@/components/ui/card-container";
 import ShineEffect from "@/components/effects/shine";
 import SlideEffect from "@/components/effects/slide";
 
