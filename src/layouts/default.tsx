@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { ToggleIcon } from "@/components/icons";
-import SideNav from "@/components/sidenav";
+import SideNav from "@/components/ui/sidenav";
 
 export default function DefaultLayout({
   children,
@@ -21,13 +21,13 @@ export default function DefaultLayout({
 
       <main className="flex flex-col flex-1 overflow-auto relative bg-gray-50">
         <div className="sm:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-[#F15A24]">Dashboard</h1>
+          <img alt="Logo" className="h-10" src="/leadway-logo.png" />
           <Button
             isIconOnly
             className="bg-transparent hover:bg-gray-100"
             onPress={() => setIsMobileMenuOpen(true)}
           >
-            <ToggleIcon className="text-gray-700" />
+            <ToggleIcon className="text-gray-600" />
           </Button>
         </div>
         <div className="p-4 sm:p-8 min-h-0 flex-1">{children}</div>
