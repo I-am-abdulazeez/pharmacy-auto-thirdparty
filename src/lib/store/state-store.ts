@@ -10,20 +10,27 @@ export type State = {
   Value: string;
 };
 
-export const statesChunk = asyncChunk(async () => {
-  try {
+export const statesChunk = asyncChunk(
+  async () => {
     const response = await fetch(`${API_URL}/ListValues/GetStates`);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch states: ${response.status}`);
     }
-    const data = await response.json() as State[];
 
-    return data;
-  } catch (error) {
-    throw error;
+    const allStates = await response.json() as State[];
+
+    return allStates
+      .filter((state) => state.Value !== "71" && state.Value !== "25")
+      .sort((a, b) => a.Text.localeCompare(b.Text));
+  },
+  {
+    refresh: {
+      staleTime: 5 * 60 * 1000,
+      cacheTime: 10 * 60 * 1000,
+    },
   }
-});
+);
 
 export type City = {
   Disabled: boolean;
