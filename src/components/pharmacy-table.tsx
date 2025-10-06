@@ -16,12 +16,9 @@ import {
 
 import { ErrorText } from "./ui/error-text";
 
-import { ProviderData } from "@/lib/services/get-providers";
 import { appChunk } from "@/lib/store/app-store";
 import { providersChunk } from "@/lib/store/provider-store";
 import { PROVIDERS_COLUMNS } from "@/lib/constants";
-
-type Provider = ProviderData["result"][number];
 
 export default function PharmacyDataTable() {
   const state = useChunkValue(appChunk);
@@ -32,7 +29,7 @@ export default function PharmacyDataTable() {
       : state.stateId === "73"
         ? "72"
         : state.stateId
-    : undefined;
+    : "1";
 
   const { data, loading, error, setParams } = useAsyncChunk(providersChunk, {
     initialParams: {
@@ -76,7 +73,7 @@ export default function PharmacyDataTable() {
 
     const searchLower = searchQuery.toLowerCase();
 
-    return data.result.filter((item: Provider) =>
+    return data.result.filter((item) =>
       item.provider?.toLowerCase().includes(searchLower)
     );
   }, [data?.result, searchQuery]);
@@ -99,7 +96,7 @@ export default function PharmacyDataTable() {
   };
 
   const tableItems = useMemo(() => {
-    return paginatedData.map((item: Provider, index: number) => ({
+    return paginatedData.map((item, index: number) => ({
       ...item,
       serial: (currentPage - 1) * pageSize + index + 1,
     }));
@@ -124,7 +121,7 @@ export default function PharmacyDataTable() {
       {validationError && <ErrorText text={validationError} />}
       {error && <ErrorText text={error.message} />}
 
-      {loading && (
+      {loading && !data && (
         <div className="mt-5 text-center">
           <Spinner color="warning" />
         </div>
@@ -175,7 +172,7 @@ export default function PharmacyDataTable() {
                 loadingContent={<Spinner color="warning" />}
                 loadingState={loading ? "loading" : "idle"}
               >
-                {(item: Provider & { serial: number }) => (
+                {(item) => (
                   <TableRow key={`${item.provider}-${item.email}`}>
                     {(columnKey) => (
                       <TableCell>{getKeyValue(item, columnKey)}</TableCell>
