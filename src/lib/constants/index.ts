@@ -54,3 +54,17 @@ export const PROVIDERS_COLUMNS = [
   { key: "provider", label: "PROVIDER" },
   { key: "ProviderAddress", label: "ADDRESS" },
 ];
+
+export const ENROLLEE_COLUMNS = [
+  { key: "serial", label: "S/N" },
+  { key: "Member_FirstName", label: "First Name" },
+  { key: "Member_Surname", label: "Surname" },
+  { key: "Member_othernames", label: "Other Names" },
+  { key: "Member_Phone_One", label: "Member Phone" },
+  { key: "Member_EmailAddress_One", label: "Member EmailAddress" },
+  { key: "Member_Age", label: "Age" },
+  { key: "Member_maritalstatusDescr", label: "Marital Status" },
+  { key: "Member_Gender", label: "Gender" },
+  { key: "Member_MemberStatus_Description", label: "Status" },
+  { key: "Plan_Category", label: "Plan Category" },
+];
