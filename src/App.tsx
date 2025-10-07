@@ -1,4 +1,7 @@
-import { Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Route, Routes, useNavigate } from "react-router-dom";
+
+import { setNavigateFunction } from "./lib/utils";
 
 import IndexPage from "@/pages/index";
 import LeadwayLoginPage from "@/pages/leadway-login";
@@ -8,6 +11,12 @@ import EnrolleesPage from "@/pages/enrollees";
 import DeliveriesPage from "@/pages/deliveries";
 
 function App() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setNavigateFunction(navigate);
+  }, [navigate]);
+
   return (
     <Routes>
       <Route element={<IndexPage />} path="/" />
