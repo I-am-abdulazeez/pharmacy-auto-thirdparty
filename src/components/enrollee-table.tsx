@@ -21,7 +21,7 @@ import { appChunk } from "@/lib/store/app-store";
 import {
   EnrolleeResponse,
   getEnrolleeByMultipleFields,
-} from "@/lib/services/get-enrollee";
+} from "@/lib/services/enrollee-service";
 import { ENROLLEE_COLUMNS } from "@/lib/constants";
 
 export default function EnrolleeDataTable() {
@@ -68,8 +68,6 @@ export default function EnrolleeDataTable() {
 
         return;
       }
-
-      console.log(data);
 
       setAllData(data);
       updateDisplayData(data, 1, searchQuery);
@@ -266,7 +264,7 @@ export default function EnrolleeDataTable() {
                       <TableCell>
                         <Link
                           className="block w-full h-full text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
-                          to="/create-delivery"
+                          to="/deliveries"
                         >
                           {getKeyValue(item, columnKey)}
                         </Link>
