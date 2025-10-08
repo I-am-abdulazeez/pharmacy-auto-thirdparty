@@ -1,6 +1,6 @@
 import { asyncChunk } from "stunk";
 
-import { fetchProvider } from "../services/get-providers";
+import { fetchProvider } from "../services/provider-service";
 
 export const providersChunk = asyncChunk(
   async ({ enrolleeId, stateId }: { enrolleeId?: string; stateId?: string }) => {
