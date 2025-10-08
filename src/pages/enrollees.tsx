@@ -1,7 +1,6 @@
 import { Input } from "@heroui/input";
 
 import PageHeader from "@/components/ui/page-header";
-import DefaultLayout from "@/layouts/default";
 import { useEnrolleeSearch } from "@/lib/hooks/use-enrollee-search";
 import EnrolleeDataTable from "@/components/enrollee-table";
 
@@ -10,7 +9,7 @@ export default function EnrolleesPage() {
     useEnrolleeSearch();
 
   return (
-    <DefaultLayout>
+    <>
       <PageHeader
         description="Manage and view enrollee information"
         title="Enrollees"
@@ -86,6 +85,6 @@ export default function EnrolleesPage() {
         </div>
         <EnrolleeDataTable />
       </section>
-    </DefaultLayout>
+    </>
   );
 }
