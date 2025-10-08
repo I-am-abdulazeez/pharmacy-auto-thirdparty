@@ -1,6 +1,6 @@
 import { chunk } from "stunk";
 
-import { EnrolleeData } from "../services/get-enrollee";
+import { EnrolleeData } from "../services/enrollee-service";
 
 import { User } from "@/types";
 
