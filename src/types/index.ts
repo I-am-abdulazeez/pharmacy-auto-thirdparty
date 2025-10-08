@@ -4,6 +4,11 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
+export type BaseForm = {
+  email: string;
+  password: string;
+};
+
 export type User = {
   Id: string;
   UserName: string;
@@ -53,6 +58,12 @@ export type User = {
   rightofconnection: string | null;
 }
 
+export type LoginResponse = {
+  status: number;
+  result: User[] | null;
+  ErrorMessage: string;
+}
+
 export type Provider = {
   Pharmacyid: number;
   PharmacyName: string;
@@ -68,7 +79,7 @@ export type Procedure = {
   ProcedureName: string;
   ProcedureQuantity: number;
   cost: string;
-  dosageDescription?: string;
+  DosageDescription?: string
 };
 
 export type Delivery = {
@@ -79,6 +90,7 @@ export type Delivery = {
   ProcedureLines: Procedure[];
   Username: string;
   AdditionalInformation: string;
+  DosageDescription: string;
   Comment: string;
   IsDelivered: boolean;
   EnrolleeId: string;
@@ -92,25 +104,54 @@ export type Delivery = {
   PharmacyName: string;
   deliveryaddress: string,
   phonenumber: string;
+  recipientcode?: string;
+  enrolleename?: string;
+  memberstatus?: string;
   cost: string;
-  attachment?: File | null
-
+  Tobedeliverdby?: string;
   EntryNo?: number;
-  Status?: string
   DeliveryId?: string;
+  Status?: string;
 };
 
 export type DeliveryData = {
   Deliveries: Delivery[];
 };
 
-export type BaseForm = {
-  email: string;
-  password: string;
-};
-
-export type LoginResponse = {
+export type DeliveryApiResponse = {
   status: number;
-  result: User[] | null;
-  ErrorMessage: string;
-}
+  result: {
+    entryno: number;
+    deliveryid: string;
+    deliveryfrequency: string;
+    delStartdate: string;
+    nextdeliverydate: string;
+    nextpackdate: string;
+    diagnosisname: string;
+    diagnosis_id: string;
+    procedurename: string;
+    procdeureid: string;
+    procedurequantity: number;
+    username: string;
+    status: string
+    inputteddate: string;
+    modifieddate: string;
+    additionalinformation: string;
+    isdelivered: boolean;
+    enrolleeid: string;
+    enrolleename: string;
+    enrollee_age: number;
+    schemename: string;
+    schemeid: string;
+    frequencyduration: string;
+    enddate: string;
+    pharmacyname: string | null;
+    pharmacyid: number;
+    approveddate: null,
+    Tobedeliverdby?: string | null;
+    Packdate: null,
+    enrolleeCount: number;
+    scheduledcount: number,
+    Deliverycount: number
+  }[]
+};
