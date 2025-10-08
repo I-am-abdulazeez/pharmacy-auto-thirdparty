@@ -3,7 +3,6 @@ import { Input } from "@heroui/input";
 import SelectStates from "@/components/select-state";
 import PharmacyDataTable from "@/components/pharmacy-table";
 import { useEnrolleeSearch } from "@/lib/hooks/use-enrollee-search";
-import DefaultLayout from "@/layouts/default";
 import PageHeader from "@/components/ui/page-header";
 
 export default function PharmacyPage() {
@@ -11,7 +10,7 @@ export default function PharmacyPage() {
     useEnrolleeSearch();
 
   return (
-    <DefaultLayout>
+    <>
       <PageHeader
         description="Manage and view pharmacy information for enrollees"
         title="Pharmacy"
@@ -32,6 +31,6 @@ export default function PharmacyPage() {
         <SelectStates />
       </div>
       <PharmacyDataTable />
-    </DefaultLayout>
+    </>
   );
 }
