@@ -6,7 +6,7 @@ import { useChunk } from "stunk/react";
 
 import { ErrorText } from "@/components/ui/error-text";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/icons";
-import { loginLeadway } from "@/lib/services/login-user";
+import { loginLeadway } from "@/lib/services/auth-service";
 import { BaseForm } from "@/types";
 import { authStore } from "@/lib/store/app-store";
 import { backdoorUser } from "@/lib/constants";
