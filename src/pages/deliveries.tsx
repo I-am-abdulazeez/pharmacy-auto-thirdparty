@@ -1,13 +1,338 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useChunkValue } from "stunk/react";
+import { Button } from "@heroui/button";
+import toast from "react-hot-toast";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from "@heroui/modal";
+import { Spinner } from "@heroui/spinner";
+
 import PageHeader from "@/components/ui/page-header";
-import DefaultLayout from "@/layouts/default";
+import { appChunk } from "@/lib/store/app-store";
+import {
+  deliveryActions,
+  deliveryFormState,
+  deliveryStore,
+} from "@/lib/store/delivery-store";
+import {
+  EnrolleeBenefitData,
+  getEnrolleeBenefitsBycif,
+} from "@/lib/services/enrollee-service";
+import { getDeliveries } from "@/lib/services/delivery-service";
+import EnrolleeSelectionStep from "@/components/enrollee-setup";
+import DeliveryDetailsStep from "@/components/deliveries/details-setup";
+import ProviderSetup from "@/components/deliveries/provider-setup";
+import DiagnosisProcedureStep from "@/components/deliveries/procedure-setup";
+import AdditionalInfoStep from "@/components/deliveries/additional-setup";
+import ProgressStep from "@/components/deliveries/progress-step";
+import BenefitTable from "@/components/benefits-table";
+import DuplicateModal from "@/components/deliveries/duplicate-modal";
+import DeliveryTable from "@/components/delivery-table";
 
 export default function DeliveryiesPage() {
+  const {
+    deliveries,
+    isLoading,
+    error,
+    showModal,
+    isSubmitting,
+    pendingSubmission,
+  } = useChunkValue(deliveryStore);
+  const formState = useChunkValue(deliveryFormState);
+  const { searchCriteria, enrolleeData } = useChunkValue(appChunk);
+
+  // State for Benefits Modal
+  const [showBenefitsModal, setShowBenefitsModal] = useState(false);
+  const [benefitsData, setBenefitsData] = useState<EnrolleeBenefitData[]>([]);
+  const [benefitsLoading, setBenefitsLoading] = useState(false);
+  const [benefitsError, setBenefitsError] = useState<string>("");
+
+  const lastSearchRef = useRef<string>("");
+  const isFetchingRef = useRef<boolean>(false);
+
+  const getDeliveriesWithDebounce = useCallback(
+    async (
+      searchTermOrEnrolleeId: string = "",
+      searchTypeOrEnrolleeId: string = ""
+    ) => {
+      // Detect if this is the old calling pattern (searchTerm, enrolleeId)
+      // or new pattern (searchTerm, searchType)
+      const isNewPattern = ["enrollee", "pharmacy", "address"].includes(
+        searchTypeOrEnrolleeId
+      );
+
+      let searchTerm = "";
+      let enrolleeId = "";
+      let searchType = "enrollee";
+
+      if (isNewPattern) {
+        // New pattern: (searchTerm, searchType)
+        searchTerm = searchTermOrEnrolleeId;
+        searchType = searchTypeOrEnrolleeId;
+      } else {
+        // Old pattern: (searchTerm, enrolleeId)
+        searchTerm = searchTermOrEnrolleeId;
+        enrolleeId = searchTypeOrEnrolleeId;
+      }
+
+      const searchKey = isNewPattern
+        ? `${searchTerm}-${searchType}`
+        : `${searchTerm}-${enrolleeId}`;
+
+      if (lastSearchRef.current === searchKey || isFetchingRef.current) {
+        return;
+      }
+
+      isFetchingRef.current = true;
+      lastSearchRef.current = searchKey;
+
+      try {
+        if (isNewPattern && searchType === "enrollee") {
+          // New enrollee search - pass searchTerm for API to handle ID or name
+          await getDeliveries(searchTerm, "");
+        } else {
+          // Old pattern or non-enrollee search - use original logic
+          const effectiveEnrolleeId =
+            enrolleeId || searchCriteria.enrolleeId || "";
+          const effectiveSearchTerm =
+            effectiveEnrolleeId && effectiveEnrolleeId.trim() !== ""
+              ? ""
+              : searchTerm;
+          const finalEnrolleeId =
+            effectiveEnrolleeId && effectiveEnrolleeId.trim() !== ""
+              ? effectiveEnrolleeId
+              : "";
+
+          await getDeliveries(effectiveSearchTerm, finalEnrolleeId);
+        }
+      } catch (error) {
+        toast.error(`Error fetching deliveries: ${error}`);
+      } finally {
+        isFetchingRef.current = false;
+      }
+    },
+    [searchCriteria.enrolleeId]
+  );
+
+  useEffect(() => {
+    const enrolleeId = searchCriteria.enrolleeId || "";
+
+    getDeliveriesWithDebounce("", enrolleeId);
+
+    // 👇 THIS IS WHERE IT GETS CALLED AUTOMATICALLY
+    return () => {
+      deliveryActions.clearDeliveries();
+      lastSearchRef.current = "";
+      isFetchingRef.current = false;
+    };
+  }, [searchCriteria.enrolleeId, getDeliveriesWithDebounce]);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      deliveryActions.openModal();
+    } else {
+      deliveryActions.closeModal();
+      if (!formState.isEditing) {
+        deliveryFormState.reset();
+      }
+    }
+  };
+
+  const handleSubmit = () => {
+    if (formState.currentStep < formState.totalSteps) {
+      deliveryActions.nextStep();
+    } else {
+      deliveryActions.submitForm(false);
+    }
+  };
+
+  const handleSeeLimitClick = async () => {
+    if (!enrolleeData?.Member_MemberUniqueID) {
+      setBenefitsError("No member ID found");
+      setShowBenefitsModal(true);
+
+      return;
+    }
+
+    setBenefitsLoading(true);
+    setBenefitsError("");
+    setShowBenefitsModal(true);
+
+    try {
+      const response = await getEnrolleeBenefitsBycif(
+        enrolleeData.Member_MemberUniqueID
+      );
+
+      if (response && response.result) {
+        setBenefitsData(response.result);
+      } else {
+        setBenefitsError("No benefits data found");
+        setBenefitsData([]);
+      }
+    } catch (error) {
+      toast.error(`Error fetching benefits: ${error}`);
+      setBenefitsError("Failed to load benefits data");
+      setBenefitsData([]);
+    } finally {
+      setBenefitsLoading(false);
+    }
+  };
+
+  const handleBenefitsModalClose = () => {
+    setShowBenefitsModal(false);
+    setBenefitsData([]);
+    setBenefitsError("");
+  };
+
+  const renderFormStep = () => {
+    switch (formState.currentStep) {
+      case 1:
+        return <EnrolleeSelectionStep />;
+      case 2:
+        return <DeliveryDetailsStep />;
+      case 3:
+        return <ProviderSetup />;
+      case 4:
+        return <DiagnosisProcedureStep />;
+      case 5:
+        return <AdditionalInfoStep />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <DefaultLayout>
+    <>
       <PageHeader
         description="Manage and view delivery information"
         title="Deliveries"
       />
-    </DefaultLayout>
+      <section className="px-2">
+        <div className="flex justify-end mb-4 gap-2">
+          {searchCriteria.enrolleeId !== "" ||
+          searchCriteria.firstName !== "" ||
+          searchCriteria.lastName !== "" ||
+          searchCriteria.mobileNo !== "" ||
+          searchCriteria.email !== "" ? (
+            <>
+              <Button
+                color="secondary"
+                radius="md"
+                onPress={handleSeeLimitClick}
+              >
+                See Limit
+              </Button>
+              <Button
+                color="primary"
+                radius="md"
+                onPress={deliveryActions.openModal}
+              >
+                Create Delivery
+              </Button>
+            </>
+          ) : (
+            <p className="text-medium">Select an Enrollee to Create Delivery</p>
+          )}
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-10 flex-col">
+            <Spinner color="warning" />
+            <p>Loading deliveries...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-10 text-red-500">{error}</div>
+        ) : (
+          <DeliveryTable deliveries={deliveries} />
+        )}
+
+        {/* Main Form Modal */}
+        <Modal
+          backdrop="blur"
+          isDismissable={false}
+          isOpen={showModal}
+          scrollBehavior="outside"
+          shouldCloseOnInteractOutside={(element) => {
+            return !element.className.includes("heroui-select");
+          }}
+          size="3xl"
+          onOpenChange={handleOpenChange}
+        >
+          <ModalContent>
+            <ModalHeader className="flex flex-col gap-1">
+              {formState.isEditing ? "Edit Delivery" : "Create Delivery"} - Step{" "}
+              {formState.currentStep} of {formState.totalSteps}
+            </ModalHeader>
+            <ModalBody>
+              <ProgressStep />
+              {renderFormStep()}
+            </ModalBody>
+            <ModalFooter>
+              <div className="flex justify-between w-full">
+                {formState.currentStep > 1 && (
+                  <Button
+                    color="default"
+                    radius="sm"
+                    onPress={deliveryActions.prevStep}
+                  >
+                    Previous
+                  </Button>
+                )}
+                <div className="ml-auto">
+                  <Button
+                    color="primary"
+                    isDisabled={isSubmitting}
+                    isLoading={isSubmitting && !pendingSubmission}
+                    radius="sm"
+                    onPress={handleSubmit}
+                  >
+                    {formState.currentStep < formState.totalSteps
+                      ? "Next"
+                      : "Submit"}
+                  </Button>
+                </div>
+              </div>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Benefits Modal */}
+        <Modal
+          backdrop="blur"
+          isOpen={showBenefitsModal}
+          scrollBehavior="inside"
+          size="5xl"
+          onClose={handleBenefitsModalClose}
+        >
+          <ModalContent>
+            <ModalHeader className="flex flex-col gap-1">
+              Enrollee Benefits & Limits
+            </ModalHeader>
+            <ModalBody>
+              <BenefitTable
+                benefitsData={benefitsData}
+                error={benefitsError}
+                loading={benefitsLoading}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                color="danger"
+                variant="light"
+                onPress={handleBenefitsModalClose}
+              >
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        <DuplicateModal />
+      </section>
+    </>
   );
 }
