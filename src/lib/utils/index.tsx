@@ -1,6 +1,6 @@
 import { parseDate } from "@internationalized/date";
 
-import { Attachment } from "../services/mail";
+import { Attachment } from "../services/mail-service";
 
 import { Delivery } from "@/types";
 
@@ -70,14 +70,14 @@ export const transformApiResponse = (apiResponse: any): Delivery => {
         ProcedureId: apiResponse.procdeureid,
         ProcedureQuantity: apiResponse.procedurequantity,
         cost: apiResponse.cost,
-        dosageDescription: apiResponse.DosageDescription,
+        DosageDescription: apiResponse.DosageDescription,
       },
     ],
+    DosageDescription: apiResponse.DosageDescription,
     Username: apiResponse.username,
     AdditionalInformation: apiResponse.additionalinformation,
     Comment: apiResponse.comment,
     IsDelivered: apiResponse.isdelivered,
-    Status: apiResponse.Status,
     EnrolleeId: apiResponse.enrolleeid,
     EnrolleeName: apiResponse.enrolleename,
     EnrolleeAge: apiResponse.enrollee_age,
@@ -85,6 +85,8 @@ export const transformApiResponse = (apiResponse: any): Delivery => {
     SchemeId: apiResponse.schemeid,
     FrequencyDuration: apiResponse.frequencyduration,
     EndDate: apiResponse.enddate,
+    Status: apiResponse.Status,
+    memberstatus: apiResponse.memberstatus,
     // Additional fields from API response
     EntryNo: apiResponse.entryno,
     DeliveryId: apiResponse.deliveryid,
@@ -93,6 +95,8 @@ export const transformApiResponse = (apiResponse: any): Delivery => {
     deliveryaddress: apiResponse.deliveryaddress,
     phonenumber: apiResponse.phonenumber,
     cost: apiResponse.cost,
+    recipientcode: apiResponse.recipientcode,
+    // nextpackdate: apiResponse.nextpackdate,
   };
 };
 
@@ -103,7 +107,6 @@ export const fileToBase64 = (file: File): Promise<string> => {
     reader.readAsDataURL(file);
     reader.onload = () => {
       const result = reader.result as string;
-      // Remove the data URL prefix (e.g., "data:image/png;base64,")
       const base64 = result.split(",")[1];
 
       resolve(base64);
