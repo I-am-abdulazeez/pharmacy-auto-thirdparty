@@ -49,6 +49,20 @@ export const backdoorUser: User = {
   rightofconnection: null,
 };
 
+export const DELIVERY_COLUMNS = [
+  { key: "enrollee", label: "Enrollee" },
+  // { key: "startDate", label: "Start Date" },
+  { key: "nextDelivery", label: "Next Delivery" },
+  { key: "frequency", label: "Frequency" },
+  { key: "memberstatus", label: "Member Status" },
+  // { key: "isDelivered", label: "Is Delivered" },
+  { key: "status", label: "Delivery Status" },
+  { key: "deliveryaddress", label: "Delivery Address" },
+  { key: "diagnosisname", label: "Diagnosis" },
+  { key: "procedurename", label: "Procedure" },
+  { key: "pharmacyname", label: "Pharmacy Name" },
+];
+
 export const PROVIDERS_COLUMNS = [
   { key: "serial", label: "S/N" },
   { key: "provider", label: "PROVIDER" },
