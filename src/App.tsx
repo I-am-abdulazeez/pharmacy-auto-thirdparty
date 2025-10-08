@@ -3,6 +3,7 @@ import { Route, Routes, useNavigate } from "react-router-dom";
 
 import { setNavigateFunction } from "./lib/utils";
 
+import ProtectedRoute from "@/components/protected";
 import IndexPage from "@/pages/index";
 import LeadwayLoginPage from "@/pages/leadway-login";
 import ProviderLoginPage from "@/pages/provider-login";
@@ -23,9 +24,11 @@ function App() {
       <Route element={<LeadwayLoginPage />} path="/leadway-login" />
       <Route element={<ProviderLoginPage />} path="/provider-login" />
 
-      <Route element={<PharmacyPage />} path="/pharmacy" />
-      <Route element={<DeliveriesPage />} path="/deliveries" />
-      <Route element={<EnrolleesPage />} path="/enrollees" />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<PharmacyPage />} path="/pharmacy" />
+        <Route element={<DeliveriesPage />} path="/deliveries" />
+        <Route element={<EnrolleesPage />} path="/enrollees" />
+      </Route>
     </Routes>
   );
 }
