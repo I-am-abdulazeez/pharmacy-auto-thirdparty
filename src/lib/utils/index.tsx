@@ -2,7 +2,7 @@ import { parseDate } from "@internationalized/date";
 
 import { Attachment } from "../services/mail-service";
 
-import { Delivery } from "@/types";
+import { Delivery, DeliveryApiResponse } from "@/types";
 
 export const API_URL = import.meta.env.VITE_PROGNOSIS_API_URL;
 
@@ -53,50 +53,78 @@ export const parseDateString = (dateString: string) => {
   }
 };
 
-export const transformApiResponse = (apiResponse: any): Delivery => {
+export const transformApiResponse = (
+  apiResponse: DeliveryApiResponse | any
+): Delivery => {
   return {
-    DeliveryFrequency: apiResponse.deliveryfrequency,
-    DelStartDate: apiResponse.delStartdate,
-    NextDeliveryDate: apiResponse.nextdeliverydate,
+    DeliveryFrequency: apiResponse.deliveryfrequency || "",
+    DelStartDate: apiResponse.delStartdate || "",
+    NextDeliveryDate: apiResponse.nextdeliverydate || "",
+    FrequencyDuration: apiResponse.frequencyduration || "",
+    EndDate: apiResponse.enddate || "",
+
+    // Diagnosis information
     DiagnosisLines: [
       {
-        DiagnosisName: apiResponse.diagnosisname,
-        DiagnosisId: apiResponse.diagnosis_id,
+        DiagnosisName: apiResponse.diagnosisname || "",
+        DiagnosisId: apiResponse.diagnosis_id || "",
       },
     ],
+
+    // Procedure information
     ProcedureLines: [
       {
-        ProcedureName: apiResponse.procedurename,
-        ProcedureId: apiResponse.procdeureid,
-        ProcedureQuantity: apiResponse.procedurequantity,
-        cost: apiResponse.cost,
-        DosageDescription: apiResponse.DosageDescription,
+        ProcedureName: apiResponse.procedurename || "",
+        ProcedureId: apiResponse.procdeureid || "",
+        ProcedureQuantity: apiResponse.procedurequantity || 1,
+        cost: apiResponse.cost || "",
+        DosageDescription: apiResponse.DosageDescription || "",
       },
     ],
-    DosageDescription: apiResponse.DosageDescription,
-    Username: apiResponse.username,
-    AdditionalInformation: apiResponse.additionalinformation,
-    Comment: apiResponse.comment,
-    IsDelivered: apiResponse.isdelivered,
-    EnrolleeId: apiResponse.enrolleeid,
-    EnrolleeName: apiResponse.enrolleename,
-    EnrolleeAge: apiResponse.enrollee_age,
-    SchemeName: apiResponse.schemename,
-    SchemeId: apiResponse.schemeid,
-    FrequencyDuration: apiResponse.frequencyduration,
-    EndDate: apiResponse.enddate,
-    Status: apiResponse.Status,
-    memberstatus: apiResponse.memberstatus,
-    // Additional fields from API response
+
+    // User and additional info
+    DosageDescription: apiResponse.DosageDescription || "",
+    Username: apiResponse.username || "",
+    AdditionalInformation: apiResponse.additionalinformation || "",
+    Comment: apiResponse.comment || "",
+    IsDelivered: apiResponse.isdelivered || false,
+
+    // Enrollee information
+    EnrolleeId: apiResponse.enrolleeid || "",
+    EnrolleeName: apiResponse.EnrolleeName || "",
+    EnrolleeEmail: apiResponse.email || "",
+    EnrolleeAge: apiResponse.enrollee_age || 0,
+
+    // Scheme information
+    SchemeName: apiResponse.schemename || "",
+    SchemeId: apiResponse.schemeid || "",
+    scheme_type: apiResponse.scheme_type || "",
+
+    // Status
+    Status: apiResponse.Status || "",
+    memberstatus: apiResponse.memberstatus || "",
+
+    // Pharmacy and delivery details
+    Pharmacyid: apiResponse.pharmacyid || 0,
+    PharmacyName: apiResponse.pharmacyname || "",
+    deliveryaddress: apiResponse.deliveryaddress || "",
+    phonenumber: apiResponse.phonenumber || "",
+    othernumber: apiResponse.othernumber || "",
+    cost: apiResponse.cost || "",
+    recipientcode: apiResponse.recipientcode || "",
+
+    // Additional API fields
     EntryNo: apiResponse.entryno,
-    DeliveryId: apiResponse.deliveryid,
-    Pharmacyid: apiResponse.pharmacyid,
-    PharmacyName: apiResponse.pharmacyname,
-    deliveryaddress: apiResponse.deliveryaddress,
-    phonenumber: apiResponse.phonenumber,
-    cost: apiResponse.cost,
-    recipientcode: apiResponse.recipientcode,
-    // nextpackdate: apiResponse.nextpackdate,
+    DeliveryId: apiResponse.deliveryid || "",
+
+    // New fields from updated API
+    inputteddate: apiResponse.inputteddate || "",
+    modifieddate: apiResponse.modifieddate || "",
+    email: apiResponse.email || "",
+    codeexpirydate: apiResponse.codeexpirydate || "",
+    paydate: apiResponse.paydate || null,
+    ispaid: apiResponse.ispaid || null,
+    codetopharmacy: apiResponse.codetopharmacy || null,
   };
 };
 
