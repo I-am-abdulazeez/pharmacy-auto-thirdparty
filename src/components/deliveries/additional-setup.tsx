@@ -43,9 +43,9 @@ export default function AdditionalInfoStep() {
           <p>
             <strong>Scheme:</strong> {formState.schemeName}
           </p>
-          <p>
+          {/* <p>
             <strong>Address:</strong> {formState.deliveryaddress}
-          </p>
+          </p> */}
           <p>
             <strong>Phone Number:</strong> {formState.phonenumber}
           </p>
