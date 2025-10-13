@@ -316,8 +316,6 @@ export const deliveryActions = {
       entryno: safeGet(data.EntryNo, 0)
     };
 
-    console.log(data.scheme_type)
-
     deliveryFormState.set(formData);
   },
 
