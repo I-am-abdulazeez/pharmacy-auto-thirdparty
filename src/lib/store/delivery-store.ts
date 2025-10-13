@@ -13,6 +13,8 @@ export const initialFormState = {
   enrolleeId: "",
   enrolleeName: "",
   enrolleeAge: 0,
+  enrolleeEmail: "",
+  scheme_type: "",
   schemeId: "",
   schemeName: "",
   deliveryaddress: "",
@@ -247,14 +249,12 @@ export const deliveryActions = {
   },
 
   setFormData: (data: any) => {
-
     // Handle diagnosis lines - check for both array and flattened structure
     let diagnosisLines: Diagnosis[] = [];
 
     if (data.DiagnosisLines && Array.isArray(data.DiagnosisLines)) {
       diagnosisLines = data.DiagnosisLines;
     } else if (data.DiagnosisName && data.DiagnosisId) {
-      // Handle flattened structure
       diagnosisLines = [{
         DiagnosisName: data.DiagnosisName,
         DiagnosisId: data.DiagnosisId
@@ -267,29 +267,34 @@ export const deliveryActions = {
     if (data.ProcedureLines && Array.isArray(data.ProcedureLines)) {
       procedureLines = data.ProcedureLines;
     } else if (data.ProcedureName && data.ProcedureId) {
-      // Handle flattened structure
       procedureLines = [{
         ProcedureName: data.ProcedureName,
         ProcedureId: data.ProcedureId,
         ProcedureQuantity: safeGet(data.ProcedureQuantity, 1),
-        cost: safeGet(data.cost, "0")
+        cost: safeGet(data.cost, "0"),
+        DosageDescription: safeGet(data.DosageDescription, "")
       }];
     }
 
-    // Transform the API response to match your form state structure
+    // Transform the data to match form state structure
+    // This works with the transformed Delivery type
+
+
     const formData = {
       enrolleeId: safeGet(data.EnrolleeId, ""),
       enrolleeName: safeGet(data.EnrolleeName, ""),
+      enrolleeEmail: safeGet(data.EnrolleeEmail || data.email, ""),
       enrolleeAge: safeGet(data.EnrolleeAge, 0),
       schemeId: safeGet(data.SchemeId, ""),
       schemeName: safeGet(data.SchemeName, ""),
+      scheme_type: safeGet(data.scheme_type, ""),
       deliveryaddress: safeGet(data.deliveryaddress, ""),
       phonenumber: safeGet(data.phonenumber, ""),
       cost: safeGet(data.cost, ""),
 
-      // Handle pharmacy data with multiple possible field names
-      pharmacyName: safeGet(data.PharmacyName, ""),
-      pharmacyId: safeGet(data.PharmacyId || data.Pharmacyid, 0),
+      // Handle pharmacy data
+      pharmacyName: safeGet(data.pharmacyname, ""),
+      pharmacyId: safeGet(data.pharmacyid, ""),
 
       deliveryFrequency: safeGet(data.DeliveryFrequency, ""),
       delStartDate: safeGet(data.DelStartDate, ""),
@@ -302,15 +307,16 @@ export const deliveryActions = {
 
       additionalInformation: safeGet(data.AdditionalInformation, ""),
       dosageDescription: safeGet(data.DosageDescription, ""),
-      comment: safeGet(data.comment, ""),
+      comment: safeGet(data.Comment, ""),
       Tobedeliverdby: safeGet(data.Tobedeliverdby, ""),
-
 
       currentStep: 1,
       totalSteps: 5,
       isEditing: true,
       entryno: safeGet(data.EntryNo, 0)
     };
+
+    console.log(data.scheme_type)
 
     deliveryFormState.set(formData);
   },
@@ -337,9 +343,10 @@ export const deliveryActions = {
       const formData = deliveryFormState.get();
       const { user } = authStore.get();
 
-      const delivery: Delivery = {
+      const delivery = {
         EnrolleeId: formData.enrolleeId,
         EnrolleeName: formData.enrolleeName,
+        EnrolleeEmail: formData.enrolleeEmail,
         EnrolleeAge: formData.enrolleeAge,
         SchemeId: formData.schemeId,
         SchemeName: formData.schemeName,
@@ -365,10 +372,11 @@ export const deliveryActions = {
 
       const deliveryEdit = {
         EnrolleeId: formData.enrolleeId,
-        EnrolleeName: formData.enrolleeName,
+        EnrolleeName: formData.enrolleeEmail,
         EnrolleeAge: formData.enrolleeAge,
         SchemeId: formData.schemeId,
         SchemeName: formData.schemeName,
+        scheme_type: formData.scheme_type,
         DeliveryFrequency: formData.deliveryFrequency,
         DelStartDate: formData.delStartDate,
         NextDeliveryDate: formData.nextDeliveryDate,
@@ -384,7 +392,7 @@ export const deliveryActions = {
         DosageDescription: formData.dosageDescription,
         Comment: formData.comment,
         IsDelivered: false,
-        Username: user ? user.UserName : "Unknown",
+        Username: user?.UserName,
         deliveryaddress: formData.deliveryaddress,
         phonenumber: formData.phonenumber,
         Pharmacyid: formData.pharmacyId,
