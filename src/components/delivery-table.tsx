@@ -28,9 +28,8 @@ import toast from "react-hot-toast";
 
 import { DeleteIcon, EditIcon } from "./icons";
 
-import { DELIVERY_COLUMNS } from "@/lib/constants";
 import { deliveryActions } from "@/lib/store/delivery-store";
-import { formatDate, transformApiResponse } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { deleteDelivery } from "@/lib/services/delivery-service";
 
 interface DeliveryTableProps {
@@ -47,26 +46,23 @@ interface DeliveryTableProps {
 
 interface RowItem {
   key: string;
-  enrollee: {
-    name: string;
-    id: string;
-    scheme: string;
-  };
-  startDate: string;
-  deliveryaddress: string;
-  nextDelivery: string;
-  frequency: string;
-  status: string;
-  diagnosisname: string;
-  procedurename: string;
-  pharmacyname: string;
-  recipientcode?: string;
+  enrolleeName: string;
+  schemeType: string;
+  enrolleeId: string;
+  email: string;
+  inputtedDate: string;
+  payDate: string;
+  codeExpiryDate: string;
+  dosageDescription: string;
+  comment: string;
+  cost: string;
+  diagnosisName: string;
+  procedureName: string;
+  deliveryStatus: string;
   actions: {
     isDelivered: boolean;
   };
   original: any;
-  cost: string;
-  toBeDeliveredBy?: string;
 }
 
 export default function DeliveryTable({
@@ -168,35 +164,27 @@ export default function DeliveryTable({
   const rows = useMemo(
     () =>
       deliveries.map((delivery, index) => {
-        const transformedDelivery = transformApiResponse(delivery);
-        const uniqueKey = `${transformedDelivery.EntryNo || index}-${Date.now()}-${Math.random()}`;
+        const uniqueKey = `${delivery.EntryNo || index}-${Date.now()}-${Math.random()}`;
 
         return {
           key: uniqueKey,
-          enrollee: {
-            name: transformedDelivery.EnrolleeName || "Unknown",
-            id: transformedDelivery.EnrolleeId || "",
-            scheme: transformedDelivery.SchemeName || "",
-          },
-          startDate: formatDate(transformedDelivery.DelStartDate),
-          nextDelivery: formatDate(transformedDelivery.NextDeliveryDate),
-          deliveryaddress: transformedDelivery.deliveryaddress || "",
-          frequency: transformedDelivery.DeliveryFrequency || "",
-          recipentcode: transformedDelivery.recipientcode || "",
-          status: transformedDelivery.Status || "Pending",
-          diagnosisname:
-            transformedDelivery.DiagnosisLines[0]?.DiagnosisName || "",
-          procedurename:
-            transformedDelivery.ProcedureLines[0]?.ProcedureName || "",
-          memberstatus: transformedDelivery.memberstatus || "",
+          enrolleeName: delivery.EnrolleeName || "N/A",
+          schemeType: delivery.scheme_type || "N/A",
+          enrolleeId: delivery.EnrolleeId || "N/A",
+          email: delivery.email || delivery.EnrolleeEmail || "N/A",
+          inputtedDate: formatDate(delivery.inputteddate) || "N/A",
+          payDate: delivery.paydate ? formatDate(delivery.paydate) : "Not Paid",
+          codeExpiryDate: formatDate(delivery.codeexpirydate) || "N/A",
+          dosageDescription: delivery.DosageDescription || "N/A",
+          comment: delivery.Comment || "N/A",
+          cost: delivery.cost || "N/A",
+          diagnosisName: delivery.DiagnosisLines?.[0]?.DiagnosisName || "N/A",
+          procedureName: delivery.ProcedureLines?.[0]?.ProcedureName || "N/A",
+          deliveryStatus: delivery.IsDelivered ? "Picked up" : "Pending",
           actions: {
-            isDelivered: transformedDelivery.IsDelivered ?? false,
+            isDelivered: delivery.IsDelivered ?? false,
           },
-          pharmacyname: transformedDelivery.PharmacyName || "",
-          cost: transformedDelivery.cost || "",
-          toBeDeliveredBy:
-            delivery.Tobedeliverdby || transformedDelivery.Tobedeliverdby || "",
-          original: transformedDelivery,
+          original: delivery,
         };
       }),
     [deliveries]
@@ -214,50 +202,76 @@ export default function DeliveryTable({
 
   const columnsWithActions = useMemo(
     () => [
-      ...DELIVERY_COLUMNS,
+      { key: "enrolleeName", label: "Enrollee Name" },
+      { key: "schemeType", label: "Scheme Type" },
+      { key: "enrolleeId", label: "Enrollee ID" },
+      { key: "email", label: "Email" },
+      { key: "inputtedDate", label: "Input Date" },
+      { key: "payDate", label: "Pay Date" },
+      { key: "codeExpiryDate", label: "Code Expiry" },
+      { key: "diagnosisName", label: "Diagnosis" },
+      { key: "procedureName", label: "Procedure" },
+      { key: "dosageDescription", label: "Dosage" },
+      { key: "comment", label: "Comment" },
       { key: "cost", label: "Cost" },
-      { key: "toBeDeliveredBy", label: "To be delivered by" },
-      {
-        key: "actions",
-        label: "Actions",
-      },
+      { key: "deliveryStatus", label: "Status" },
+      { key: "actions", label: "Actions" },
     ],
     []
   );
 
   const renderCell = (item: RowItem, columnKey: Key): React.ReactNode => {
     switch (columnKey) {
-      case "enrollee":
+      case "enrolleeName":
         return (
           <div className="flex flex-col">
-            <div className="text-md font-medium">{item.enrollee.name}</div>
+            <div className="text-md font-medium">{item.enrolleeName}</div>
           </div>
         );
-      case "deliveryaddress":
-        return <span className="text-sm">{item.deliveryaddress || "N/A"}</span>;
-      case "status":
-        const getStatusColor = (status: string) => {
-          switch (status?.toLowerCase()) {
-            case "delivered":
-              return "success";
-            case "packed":
-              return "primary";
-            case "pending":
-            case "approved":
-              return "warning";
-            case "cancelled":
-            case "failed":
-              return "danger";
-            default:
-              return "default";
-          }
-        };
-
-        return <Badge color={getStatusColor(item.status)}>{item.status}</Badge>;
-      case "isDelivered":
+      case "schemeType":
         return (
-          <Badge color={item.actions.isDelivered ? "success" : "warning"}>
-            {item.actions.isDelivered ? "Yes" : "No"}
+          <span className="text-sm font-semibold text-blue-600">
+            {item.schemeType}
+          </span>
+        );
+      case "enrolleeId":
+        return <span className="text-sm text-gray-700">{item.enrolleeId}</span>;
+      case "email":
+        return <span className="text-sm text-gray-600">{item.email}</span>;
+      case "inputtedDate":
+        return <span className="text-sm">{item.inputtedDate}</span>;
+      case "payDate":
+        return (
+          <span
+            className={`text-sm ${item.payDate === "Not Paid" ? "text-orange-500 italic" : ""}`}
+          >
+            {item.payDate}
+          </span>
+        );
+      case "codeExpiryDate":
+        return <span className="text-sm">{item.codeExpiryDate}</span>;
+      case "diagnosisName":
+        return <span className="text-sm">{item.diagnosisName}</span>;
+      case "procedureName":
+        return <span className="text-sm">{item.procedureName}</span>;
+      case "dosageDescription":
+        return (
+          <span className="text-sm text-gray-600">
+            {item.dosageDescription}
+          </span>
+        );
+      case "comment":
+        return <span className="text-sm text-gray-600">{item.comment}</span>;
+      case "cost":
+        return (
+          <span className="text-sm font-medium">{item.cost || "N/A"}</span>
+        );
+      case "deliveryStatus":
+        return (
+          <Badge
+            color={item.deliveryStatus === "Picked up" ? "success" : "warning"}
+          >
+            {item.deliveryStatus}
           </Badge>
         );
       case "actions":
@@ -265,7 +279,7 @@ export default function DeliveryTable({
           <div className="flex gap-2">
             <Button
               isIconOnly
-              aria-label={`Edit delivery for ${item.enrollee.name}`}
+              aria-label={`Edit delivery for ${item.enrolleeName}`}
               color="default"
               isDisabled={item.actions.isDelivered || isEditing[item.key]}
               isLoading={isEditing[item.key]}
@@ -277,7 +291,7 @@ export default function DeliveryTable({
             </Button>
             <Button
               isIconOnly
-              aria-label={`Delete delivery for ${item.enrollee.name}`}
+              aria-label={`Delete delivery for ${item.enrolleeName}`}
               color="danger"
               isDisabled={isDeleting[item.key]}
               size="sm"
@@ -291,22 +305,6 @@ export default function DeliveryTable({
               )}
             </Button>
           </div>
-        );
-      case "diagnosisname":
-        return <span>{item.diagnosisname}</span>;
-      case "procedurename":
-        return <span>{item.procedurename}</span>;
-      case "pharmacyname":
-        return <span className="text-gray-500">{item.pharmacyname}</span>;
-      case "cost":
-        return <span className="text-gray-500">{item.cost}</span>;
-      case "toBeDeliveredBy": // ADD THIS WHOLE CASE
-        return (
-          <span className="text-sm">
-            {item.toBeDeliveredBy || (
-              <span className="text-gray-400 italic">Not assigned</span>
-            )}
-          </span>
         );
       default:
         return getKeyValue(item, columnKey);
@@ -453,19 +451,14 @@ export default function DeliveryTable({
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  {location.pathname === "/create-delivery" ? (
-                    <>
-                      <h3 className="text-lg font-semibold">Deliveries</h3>
-                      <p className="text-sm text-gray-600">
-                        Manage and track delivery status
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-xs text-gray-500">
-                      Total: {filteredRows.length} deliveries
-                      {searchTerm && <span> (search results)</span>}
-                    </p>
-                  )}
+                  <h3 className="text-lg font-semibold">Deliveries</h3>
+                  <p className="text-sm text-gray-600">
+                    Manage and track Pickup status
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Total: {filteredRows.length} deliveries
+                    {searchTerm && <span> (search results)</span>}
+                  </p>
                 </div>
               </div>
             </div>
@@ -501,7 +494,7 @@ export default function DeliveryTable({
             <p className="text-gray-700">
               Are you sure you want to delete this delivery for{" "}
               <span className="font-semibold">
-                {deleteConfirmation.delivery?.enrollee.name || "this enrollee"}?
+                {deleteConfirmation.delivery?.enrolleeName || "this enrollee"}?
               </span>
             </p>
             <p className="mt-2 text-sm text-gray-500">
