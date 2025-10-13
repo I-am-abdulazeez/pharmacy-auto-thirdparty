@@ -33,7 +33,7 @@ import BenefitTable from "@/components/benefits-table";
 import DuplicateModal from "@/components/deliveries/duplicate-modal";
 import DeliveryTable from "@/components/delivery-table";
 
-export default function DeliveryiesPage() {
+export default function DeliveriesPage() {
   const {
     deliveries,
     isLoading,
@@ -51,37 +51,21 @@ export default function DeliveryiesPage() {
   const [benefitsLoading, setBenefitsLoading] = useState(false);
   const [benefitsError, setBenefitsError] = useState<string>("");
 
+  // State for search filters
+  const [currentSearchTerm, setCurrentSearchTerm] = useState("");
+  const [currentSearchType, setCurrentSearchType] = useState<
+    "enrollee" | "pharmacy" | "address"
+  >("enrollee");
+
   const lastSearchRef = useRef<string>("");
   const isFetchingRef = useRef<boolean>(false);
 
-  const getDeliveriesWithDebounce = useCallback(
+  const getDeliveriesWithFilters = useCallback(
     async (
-      searchTermOrEnrolleeId: string = "",
-      searchTypeOrEnrolleeId: string = ""
+      searchTerm: string = "",
+      searchType: "enrollee" | "pharmacy" | "address" = "enrollee"
     ) => {
-      // Detect if this is the old calling pattern (searchTerm, enrolleeId)
-      // or new pattern (searchTerm, searchType)
-      const isNewPattern = ["enrollee", "pharmacy", "address"].includes(
-        searchTypeOrEnrolleeId
-      );
-
-      let searchTerm = "";
-      let enrolleeId = "";
-      let searchType = "enrollee";
-
-      if (isNewPattern) {
-        // New pattern: (searchTerm, searchType)
-        searchTerm = searchTermOrEnrolleeId;
-        searchType = searchTypeOrEnrolleeId;
-      } else {
-        // Old pattern: (searchTerm, enrolleeId)
-        searchTerm = searchTermOrEnrolleeId;
-        enrolleeId = searchTypeOrEnrolleeId;
-      }
-
-      const searchKey = isNewPattern
-        ? `${searchTerm}-${searchType}`
-        : `${searchTerm}-${enrolleeId}`;
+      const searchKey = `${searchTerm}-${searchType}`;
 
       if (lastSearchRef.current === searchKey || isFetchingRef.current) {
         return;
@@ -91,24 +75,36 @@ export default function DeliveryiesPage() {
       lastSearchRef.current = searchKey;
 
       try {
-        if (isNewPattern && searchType === "enrollee") {
-          // New enrollee search - pass searchTerm for API to handle ID or name
-          await getDeliveries(searchTerm, "");
-        } else {
-          // Old pattern or non-enrollee search - use original logic
-          const effectiveEnrolleeId =
-            enrolleeId || searchCriteria.enrolleeId || "";
-          const effectiveSearchTerm =
-            effectiveEnrolleeId && effectiveEnrolleeId.trim() !== ""
-              ? ""
-              : searchTerm;
-          const finalEnrolleeId =
-            effectiveEnrolleeId && effectiveEnrolleeId.trim() !== ""
-              ? effectiveEnrolleeId
-              : "";
+        let enrolleeId = "";
+        let phone = "";
+        let email = "";
+        let pharmacyid = "";
+        let showall = false;
 
-          await getDeliveries(effectiveSearchTerm, finalEnrolleeId);
+        // Map search type to API parameters
+        switch (searchType) {
+          case "enrollee":
+            // Search by enrollee ID or name
+            enrolleeId = searchTerm;
+            break;
+          case "pharmacy":
+            // Search by pharmacy ID
+            pharmacyid = searchTerm;
+            break;
+          case "address":
+            // For region/address search, use phone as a proxy or show all
+            phone = searchTerm;
+            break;
         }
+
+        // If no search term and no enrollee selected, show all
+        if (!searchTerm && !searchCriteria.enrolleeId) {
+          showall = true;
+        } else if (!searchTerm && searchCriteria.enrolleeId) {
+          enrolleeId = searchCriteria.enrolleeId;
+        }
+
+        await getDeliveries(enrolleeId, phone, email, pharmacyid, showall);
       } catch (error) {
         toast.error(`Error fetching deliveries: ${error}`);
       } finally {
@@ -119,17 +115,31 @@ export default function DeliveryiesPage() {
   );
 
   useEffect(() => {
-    const enrolleeId = searchCriteria.enrolleeId || "";
+    // Initial load based on enrollee selection
+    if (searchCriteria.enrolleeId) {
+      getDeliveriesWithFilters(searchCriteria.enrolleeId, "enrollee");
+    } else {
+      // Show all deliveries if no enrollee is selected
+      getDeliveriesWithFilters("", "enrollee");
+    }
 
-    getDeliveriesWithDebounce("", enrolleeId);
-
-    // 👇 THIS IS WHERE IT GETS CALLED AUTOMATICALLY
     return () => {
       deliveryActions.clearDeliveries();
       lastSearchRef.current = "";
       isFetchingRef.current = false;
     };
-  }, [searchCriteria.enrolleeId, getDeliveriesWithDebounce]);
+  }, [searchCriteria.enrolleeId, getDeliveriesWithFilters]);
+
+  const handleSearch = (
+    searchTerm: string,
+    searchType?: "enrollee" | "pharmacy" | "address"
+  ) => {
+    const finalSearchType = searchType || currentSearchType;
+
+    setCurrentSearchTerm(searchTerm);
+    setCurrentSearchType(finalSearchType);
+    getDeliveriesWithFilters(searchTerm, finalSearchType);
+  };
 
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
@@ -208,7 +218,7 @@ export default function DeliveryiesPage() {
   return (
     <>
       <PageHeader
-        description="Manage and view delivery information"
+        description="Manage and view Pickup information"
         title="Deliveries"
       />
       <section className="px-2">
@@ -240,14 +250,20 @@ export default function DeliveryiesPage() {
         </div>
 
         {isLoading ? (
-          <div className="text-center py-10 flex-col">
+          <div className="text-center py-10 flex flex-col items-center gap-2">
             <Spinner color="warning" />
             <p>Loading deliveries...</p>
           </div>
         ) : error ? (
           <div className="text-center py-10 text-red-500">{error}</div>
         ) : (
-          <DeliveryTable deliveries={deliveries} />
+          <DeliveryTable
+            currentSearchTerm={currentSearchTerm}
+            currentSearchType={currentSearchType}
+            deliveries={deliveries}
+            isLoading={isLoading}
+            onSearch={handleSearch}
+          />
         )}
 
         {/* Main Form Modal */}
