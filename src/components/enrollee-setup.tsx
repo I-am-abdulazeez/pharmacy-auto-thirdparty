@@ -23,18 +23,21 @@ export default function EnrolleeSelectionStep() {
         "enrolleeName",
         `${enrolleeData?.Member_MemberTitle} ${enrolleeData?.Member_FirstName} ${enrolleeData?.Member_Surname}`
       );
-      deliveryActions.updateFormField("enrolleeAge", enrolleeData?.Member_Age);
-      deliveryActions.updateFormField("schemeId", user.insco_id.toString());
+      deliveryActions.updateFormField(
+        "enrolleeEmail",
+        `${enrolleeData?.Member_EmailAddress_One}`
+      );
+      deliveryActions.updateFormField("scheme_type", user.insco_id.toString());
       deliveryActions.updateFormField(
         "schemeName",
         enrolleeData?.client_schemename
       );
-      if (!formState.deliveryaddress) {
-        deliveryActions.updateFormField(
-          "deliveryaddress",
-          enrolleeData?.Member_Address
-        );
-      }
+      // if (!formState.deliveryaddress) {
+      //   deliveryActions.updateFormField(
+      //     "deliveryaddress",
+      //     enrolleeData?.Member_Address
+      //   );
+      // }
       if (!formState.phonenumber) {
         deliveryActions.updateFormField(
           "phonenumber",
@@ -71,24 +74,28 @@ export default function EnrolleeSelectionStep() {
             <p className="font-medium">{formState.enrolleeName}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Age</p>
-            <p className="font-medium">{formState.enrolleeAge}</p>
-          </div>
-          <div>
             <p className="text-sm text-gray-500">Scheme</p>
-            <p className="font-medium">{formState.schemeName}</p>
+            <p className="font-medium">{formState.scheme_type}</p>
           </div>
         </div>
 
         {/* Add the new editable input fields */}
         <div className="mt-6 grid grid-cols-2 gap-6">
           <div>
-            <Input
+            {/* <Input
               label="Delivery Address"
               placeholder="Enter delivery address"
               value={formState.deliveryaddress || ""}
               onChange={(e) =>
                 handleInputChange("deliveryaddress", e.target.value)
+              }
+            /> */}
+            <Input
+              label="Email Address"
+              placeholder="Enter Email Address"
+              value={formState.enrolleeEmail || ""}
+              onChange={(e) =>
+                handleInputChange("enrolleeEmail", e.target.value)
               }
             />
           </div>
