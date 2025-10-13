@@ -83,36 +83,57 @@ export type Procedure = {
 };
 
 export type Delivery = {
-  DeliveryFrequency: string;
-  DelStartDate: string;
-  NextDeliveryDate: string;
+  // Core delivery fields
+  DeliveryFrequency?: string;
+  DelStartDate?: string;
+  NextDeliveryDate?: string;
   DiagnosisLines: Diagnosis[];
   ProcedureLines: Procedure[];
   Username: string;
-  AdditionalInformation: string;
+  AdditionalInformation?: string;
   DosageDescription: string;
   Comment: string;
   IsDelivered: boolean;
+
+  // Enrollee information
   EnrolleeId: string;
   EnrolleeName: string;
+  EnrolleeEmail: string;
   EnrolleeAge: number;
-  SchemeName: string;
-  SchemeId: string;
-  FrequencyDuration: string;
-  EndDate: string;
-  Pharmacyid: number;
-  PharmacyName: string;
-  deliveryaddress: string,
-  phonenumber: string;
-  recipientcode?: string;
-  enrolleename?: string;
+
+  // Scheme information
+  SchemeName?: string;
+  SchemeId?: string;
+  scheme_type?: string;
+
+  // Pharmacy information
+  Pharmacyid: number | string;
+  PharmacyName?: string;
+  phonenumber?: string;
+  deliveryaddress?: string;
+
+  // Additional fields
+  FrequencyDuration?: string;
+  EndDate?: string;
+  Status?: string;
   memberstatus?: string;
-  cost: string;
+  recipientcode?: string;
+  cost?: string;
   Tobedeliverdby?: string;
   EntryNo?: number;
   DeliveryId?: string;
-  Status?: string;
+
+  // Fields from new API response
+  inputteddate?: string;
+  modifieddate?: string;
+  email?: string;
+  codeexpirydate?: string;
+  paydate?: string | null;
+  ispaid?: boolean | null;
+  othernumber?: string;
+  codetopharmacy?: string | null;
 };
+
 
 export type DeliveryData = {
   Deliveries: Delivery[];
@@ -121,37 +142,53 @@ export type DeliveryData = {
 export type DeliveryApiResponse = {
   status: number;
   result: {
-    entryno: number;
-    deliveryid: string;
-    deliveryfrequency: string;
-    delStartdate: string;
-    nextdeliverydate: string;
-    nextpackdate: string;
-    diagnosisname: string;
-    diagnosis_id: string;
-    procedurename: string;
-    procdeureid: string;
-    procedurequantity: number;
-    username: string;
-    status: string
-    inputteddate: string;
-    modifieddate: string;
-    additionalinformation: string;
-    isdelivered: boolean;
-    enrolleeid: string;
-    enrolleename: string;
-    enrollee_age: number;
-    schemename: string;
-    schemeid: string;
-    frequencyduration: string;
-    enddate: string;
-    pharmacyname: string | null;
-    pharmacyid: number;
-    approveddate: null,
-    Tobedeliverdby?: string | null;
-    Packdate: null,
-    enrolleeCount: number;
-    scheduledcount: number,
-    Deliverycount: number
+    DeliveryFrequency?: string;
+    DelStartDate?: string;
+    NextDeliveryDate?: string;
+    DiagnosisLines: Diagnosis[];
+    ProcedureLines: Procedure[];
+    Username: string;
+    AdditionalInformation?: string;
+    DosageDescription: string;
+    Comment: string;
+    IsDelivered: boolean;
+
+    // Enrollee information
+    EnrolleeId: string;
+    EnrolleeName: string;
+    EnrolleeEmail: string;
+    EnrolleeAge: number;
+
+    // Scheme information
+    SchemeName?: string;
+    SchemeId?: string;
+    scheme_type?: string;
+
+    // Pharmacy information
+    Pharmacyid: number | string;
+    PharmacyName?: string;
+    phonenumber?: string;
+    deliveryaddress?: string;
+
+    // Additional fields
+    FrequencyDuration?: string;
+    EndDate?: string;
+    Status?: string;
+    memberstatus?: string;
+    recipientcode?: string;
+    cost?: string;
+    Tobedeliverdby?: string;
+    EntryNo?: number;
+    DeliveryId?: string;
+
+    // Fields from new API response
+    inputteddate?: string;
+    modifieddate?: string;
+    email?: string;
+    codeexpirydate?: string;
+    paydate?: string | null;
+    ispaid?: boolean | null;
+    othernumber?: string;
+    codetopharmacy?: string | null;
   }[]
 };
