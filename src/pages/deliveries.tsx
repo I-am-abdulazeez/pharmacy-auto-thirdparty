@@ -87,9 +87,9 @@ export default function DeliveriesPage() {
         let pharmacyid = "";
         let codetopharmacy = "";
 
-        // If showAll is true, ignore other filters
         if (showAll) {
           await getDeliveries("", "", "", "", "", true);
+
           return;
         }
 
