@@ -24,7 +24,6 @@ import {
 } from "@/lib/services/enrollee-service";
 import { getDeliveries } from "@/lib/services/delivery-service";
 import EnrolleeSelectionStep from "@/components/enrollee-setup";
-import DeliveryDetailsStep from "@/components/deliveries/details-setup";
 import ProviderSetup from "@/components/deliveries/provider-setup";
 import DiagnosisProcedureStep from "@/components/deliveries/procedure-setup";
 import AdditionalInfoStep from "@/components/deliveries/additional-setup";
@@ -144,6 +143,16 @@ export default function DeliveriesPage() {
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
       deliveryActions.openModal();
+
+      // Auto-generate delivery code for new deliveries
+      if (!formState.isEditing) {
+        const generateRandomCode = () => {
+          return Math.floor(100000 + Math.random() * 900000).toString();
+        };
+        const generatedCode = generateRandomCode();
+
+        deliveryActions.updateFormField("deliveryaddress", generatedCode);
+      }
     } else {
       deliveryActions.closeModal();
       if (!formState.isEditing) {
@@ -203,12 +212,10 @@ export default function DeliveriesPage() {
       case 1:
         return <EnrolleeSelectionStep />;
       case 2:
-        return <DeliveryDetailsStep />;
-      case 3:
         return <ProviderSetup />;
-      case 4:
+      case 3:
         return <DiagnosisProcedureStep />;
-      case 5:
+      case 4:
         return <AdditionalInfoStep />;
       default:
         return null;
@@ -218,7 +225,7 @@ export default function DeliveriesPage() {
   return (
     <>
       <PageHeader
-        description="Manage and view Pickup information"
+        description="Manage and view delivery information"
         title="Deliveries"
       />
       <section className="px-2">
