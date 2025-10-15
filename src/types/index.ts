@@ -24,7 +24,7 @@ export type User = {
   LockoutEnabled: boolean;
   AccessFailedCount: number;
   insco_id: number;
-  provider_id: string | null;
+  provider_id: string | null | number;
   surname: string;
   firstname: string;
   ModifiedDateTime: string;
