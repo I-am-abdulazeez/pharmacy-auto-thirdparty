@@ -40,7 +40,7 @@ export const initialFormState = {
 
 
   currentStep: 1,
-  totalSteps: 5,
+  totalSteps: 4,
   isEditing: false,
   entryno: 0
 };
@@ -279,7 +279,6 @@ export const deliveryActions = {
     // Transform the data to match form state structure
     // This works with the transformed Delivery type
 
-
     const formData = {
       enrolleeId: safeGet(data.EnrolleeId, ""),
       enrolleeName: safeGet(data.EnrolleeName, ""),
@@ -311,7 +310,7 @@ export const deliveryActions = {
       Tobedeliverdby: safeGet(data.Tobedeliverdby, ""),
 
       currentStep: 1,
-      totalSteps: 5,
+      totalSteps: 4,
       isEditing: true,
       entryno: safeGet(data.EntryNo, 0)
     };
@@ -343,7 +342,7 @@ export const deliveryActions = {
 
       const delivery = {
         EnrolleeId: formData.enrolleeId,
-        EnrolleeName: formData.enrolleeName,
+        EnrolleeName: formData.enrolleeEmail,
         EnrolleeEmail: formData.enrolleeEmail,
         EnrolleeAge: formData.enrolleeAge,
         SchemeId: formData.schemeId,
@@ -351,7 +350,7 @@ export const deliveryActions = {
         DeliveryFrequency: formData.deliveryFrequency,
         DelStartDate: formData.delStartDate,
         NextDeliveryDate: formData.nextDeliveryDate,
-        FrequencyDuration: formData.frequencyDuration,
+        FrequencyDuration: formData.enrolleeEmail,
         EndDate: formData.endDate,
         DiagnosisLines: formData.diagnosisLines,
         ProcedureLines: formData.procedureLines,
@@ -359,7 +358,7 @@ export const deliveryActions = {
         DosageDescription: formData.dosageDescription,
         Comment: formData.comment,
         IsDelivered: false,
-        Username: user ? user.UserName : "Unknown",
+        Username: user?.UserName || "",
         deliveryaddress: formData.deliveryaddress,
         phonenumber: formData.phonenumber,
         Pharmacyid: formData.pharmacyId,
@@ -370,7 +369,7 @@ export const deliveryActions = {
 
       const deliveryEdit = {
         EnrolleeId: formData.enrolleeId,
-        EnrolleeName: formData.enrolleeEmail,
+        // EnrolleeName: "",
         EnrolleeAge: formData.enrolleeAge,
         SchemeId: formData.schemeId,
         SchemeName: formData.schemeName,
@@ -390,7 +389,7 @@ export const deliveryActions = {
         DosageDescription: formData.dosageDescription,
         Comment: formData.comment,
         IsDelivered: false,
-        Username: user?.UserName,
+        Username: formData.enrolleeEmail,
         deliveryaddress: formData.deliveryaddress,
         phonenumber: formData.phonenumber,
         Pharmacyid: formData.pharmacyId,
@@ -404,12 +403,15 @@ export const deliveryActions = {
 
       if (formData.isEditing) {
         response = await editDelivery(deliveryEdit);
+        console.log(deliveryEdit)
       } else {
         const formattedData = {
           Deliveries: [delivery],
           ConfirmDuplicates: confirmDuplicates
         };
         const shouldSkipNavigation = !confirmDuplicates;
+
+        console.log(formattedData)
 
         response = await createDelivery(formattedData, shouldSkipNavigation);
       }
