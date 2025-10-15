@@ -172,7 +172,7 @@ export const editDelivery = async (formData: any): Promise<any> => {
       isSubmitting: true,
     }));
 
-    const apiUrl = `${API_URL}/PharmacyDelivery/UpdateDeliveryLine`;
+    const apiUrl = `${API_URL}/PharmacyDelivery/UpdatePickUpLine`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -194,19 +194,6 @@ export const editDelivery = async (formData: any): Promise<any> => {
 
       return data;
     }
-
-    const enrolleeId = formData?.EnrolleeId;
-
-    // Refresh deliveries based on current page
-    if (enrolleeId) {
-      if (window.location.pathname === "/provider-pendings") {
-        await getDeliveries(enrolleeId);
-      } else {
-        await getDeliveries(enrolleeId);
-      }
-    }
-
-    programmaticNavigate("/enrollees");
 
     return data;
   } catch (error) {
@@ -231,10 +218,11 @@ export const deleteDelivery = async (
 ): Promise<void> => {
   try {
     // Extract IDs from the transformed delivery structure
-    const deliveryId = delivery.original?.DeliveryId;
+    const deliveryId = delivery.original?.EntryNo;
     const procedureId = delivery.original?.ProcedureLines?.[0]?.ProcedureId;
     const diagnosisId = delivery.original?.DiagnosisLines?.[0]?.DiagnosisId;
     const enrolleeId = delivery.original?.EnrolleeId;
+
 
     if (!deliveryId || !procedureId || !diagnosisId) {
       toast.error("Missing required information for deletion");
@@ -251,7 +239,7 @@ export const deleteDelivery = async (
     };
 
     const response = await fetch(
-      `${API_URL}/PharmacyDelivery/DeleteDeliveryLine`,
+      `${API_URL}/PharmacyDelivery/DeletePickupLine`,
       {
         method: "POST",
         headers: {
