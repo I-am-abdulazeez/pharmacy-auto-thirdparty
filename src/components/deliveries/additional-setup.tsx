@@ -41,19 +41,10 @@ export default function AdditionalInfoStep() {
             <strong>Enrollee:</strong> {formState.enrolleeName}
           </p>
           <p>
-            <strong>Scheme:</strong> {formState.schemeName}
+            <strong>Scheme:</strong> {formState.scheme_type}
           </p>
-          {/* <p>
-            <strong>Address:</strong> {formState.deliveryaddress}
-          </p> */}
           <p>
             <strong>Phone Number:</strong> {formState.phonenumber}
-          </p>
-          <p>
-            <strong>Frequency:</strong> {formState.deliveryFrequency}
-          </p>
-          <p>
-            <strong>Start Date:</strong> {formState.delStartDate}
           </p>
 
           <p>
@@ -62,9 +53,6 @@ export default function AdditionalInfoStep() {
           <p>
             <strong>Medication:</strong> {formState.procedureLines.length}
           </p>
-          {/* <p>
-            <strong>Cost:</strong> {calculateTotalCost()}
-          </p> */}
         </div>
       </div>
     </div>
