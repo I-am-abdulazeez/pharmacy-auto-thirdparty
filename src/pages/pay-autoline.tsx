@@ -41,7 +41,7 @@ export default function PayAutoLinePage() {
         enrolleeId,
         "",
         "",
-        pharmacyId,
+        String(pharmacyId),
         codeToPharmacy,
         false
       );
