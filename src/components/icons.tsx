@@ -178,6 +178,25 @@ export const DeliveryIcon = (props: IconSvgProps) => (
   </svg>
 );
 
+export const PayAutoLineIcon = (props: IconSvgProps) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="currentColor"
+    viewBox="0 0 24 24"
+    {...props}
+  >
+    <path
+      className="b"
+      d="m5,2h-3v2h2v16c0,1.1.9,2,2,2h12c1.1,0,2-.9,2-2V4h2v-2H5Zm13,18H6V4h12v16Z"
+    ></path>
+    <path className="b" d="M14 13H16V18H14z"></path>
+    <path className="b" d="M8 13H11V18H8z"></path>
+    <path className="b" d="M14 6H16V11H14z"></path>
+  </svg>
+);
+
 export const ToggleIcon = (props: IconSvgProps) => (
   <svg
     fill="currentColor"
