@@ -51,7 +51,7 @@ export const backdoorUser: User = {
 
 export const DELIVERY_COLUMNS =
   [
-    { key: "enrolleeName", label: "Enrollee Name" },
+    { key: "enrolleeName", label: "Enrollee" },
     { key: "schemeType", label: "Scheme Type" },
     { key: "enrolleeId", label: "Enrollee ID" },
     { key: "inputtedDate", label: "Input Date" },
