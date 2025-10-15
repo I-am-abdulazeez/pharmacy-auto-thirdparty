@@ -1,7 +1,4 @@
-import { useEffect } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
-
-import { setNavigateFunction } from "./lib/utils";
+import { Route, Routes } from "react-router-dom";
 
 import IndexPage from "@/pages/index";
 import LeadwayLoginPage from "@/pages/leadway-login";
@@ -9,16 +6,11 @@ import ProviderLoginPage from "@/pages/provider-login";
 import PharmacyPage from "@/pages/pharmacy";
 import EnrolleesPage from "@/pages/enrollees";
 import DeliveriesPage from "@/pages/deliveries";
+import PayAutoLinePage from "@/pages/pay-autoline";
 import ProtectedLeadwayRoute from "@/components/shared/protected-leadway";
 import ProtectedProviderRoute from "@/components/shared/protected-provider";
 
 function App() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    setNavigateFunction(navigate);
-  }, [navigate]);
-
   return (
     <Routes>
       <Route element={<IndexPage />} path="/" />
@@ -31,7 +23,7 @@ function App() {
         <Route element={<EnrolleesPage />} path="enrollees" />
       </Route>
       <Route element={<ProtectedProviderRoute />} path="/provider/">
-        <Route element={<PharmacyPage />} path="deliveries" />
+        <Route element={<PayAutoLinePage />} path="pay-autoline" />
       </Route>
     </Routes>
   );
