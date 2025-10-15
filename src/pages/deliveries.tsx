@@ -32,6 +32,15 @@ import BenefitTable from "@/components/benefits-table";
 import DuplicateModal from "@/components/deliveries/duplicate-modal";
 import DeliveryTable from "@/components/delivery-table";
 
+interface SearchFilters {
+  enrollee: string;
+  phone: string;
+  email: string;
+  pharmacy: string;
+  code: string;
+  showAll: boolean;
+}
+
 export default function DeliveriesPage() {
   const {
     deliveries,
@@ -51,27 +60,21 @@ export default function DeliveriesPage() {
   const [benefitsError, setBenefitsError] = useState<string>("");
 
   // State for search filters
-  const [currentSearchTerm, setCurrentSearchTerm] = useState("");
-  const [currentSearchType, setCurrentSearchType] = useState<
-    "enrollee" | "phone" | "email" | "pharmacy" | "code"
-  >("enrollee");
-  const [currentShowAll, setCurrentShowAll] = useState(false);
+  const [currentFilters, setCurrentFilters] = useState<SearchFilters>({
+    enrollee: "",
+    phone: "",
+    email: "",
+    pharmacy: "",
+    code: "",
+    showAll: false,
+  });
 
   const lastSearchRef = useRef<string>("");
   const isFetchingRef = useRef<boolean>(false);
 
   const getDeliveriesWithFilters = useCallback(
-    async (
-      searchTerm: string = "",
-      searchType:
-        | "enrollee"
-        | "phone"
-        | "email"
-        | "pharmacy"
-        | "code" = "enrollee",
-      showAll: boolean = false
-    ) => {
-      const searchKey = `${searchTerm}-${searchType}-${showAll}`;
+    async (filters: SearchFilters) => {
+      const searchKey = JSON.stringify(filters);
 
       if (lastSearchRef.current === searchKey || isFetchingRef.current) {
         return;
@@ -81,70 +84,46 @@ export default function DeliveriesPage() {
       lastSearchRef.current = searchKey;
 
       try {
-        let enrolleeId = "";
-        let phone = "";
-        let email = "";
-        let pharmacyid = "";
-        let codetopharmacy = "";
+        // Check if any filter has a value
+        const hasFilters =
+          filters.enrollee ||
+          filters.phone ||
+          filters.email ||
+          filters.pharmacy ||
+          filters.code;
 
-        if (showAll) {
-          await getDeliveries("", "", "", "", "", true);
+        const showAll = filters.showAll && !hasFilters;
 
-          return;
-        }
-
-        // Map search type to API parameters
-        switch (searchType) {
-          case "enrollee":
-            enrolleeId = searchTerm;
-            break;
-          case "phone":
-            phone = searchTerm;
-            break;
-          case "email":
-            email = searchTerm;
-            break;
-          case "pharmacy":
-            pharmacyid = searchTerm;
-            break;
-          case "code":
-            codetopharmacy = searchTerm;
-            break;
-        }
-
-        // If no search term and no enrollee selected, show all
-        if (!searchTerm && !searchCriteria.enrolleeId) {
-          await getDeliveries("", "", "", "", "", true);
-        } else if (!searchTerm && searchCriteria.enrolleeId) {
-          enrolleeId = searchCriteria.enrolleeId;
-          await getDeliveries(enrolleeId, "", "", "", "", false);
-        } else {
-          await getDeliveries(
-            enrolleeId,
-            phone,
-            email,
-            pharmacyid,
-            codetopharmacy,
-            false
-          );
-        }
+        await getDeliveries(
+          filters.enrollee,
+          filters.phone,
+          filters.email,
+          filters.pharmacy,
+          filters.code,
+          showAll
+        );
       } catch (error) {
         toast.error(`Error fetching deliveries: ${error}`);
       } finally {
         isFetchingRef.current = false;
       }
     },
-    [searchCriteria.enrolleeId]
+    []
   );
 
   useEffect(() => {
     // Initial load based on enrollee selection
-    if (searchCriteria.enrolleeId) {
-      getDeliveriesWithFilters(searchCriteria.enrolleeId, "enrollee", false);
-    } else {
-      // Show all deliveries if no enrollee is selected
-      getDeliveriesWithFilters("", "enrollee", true);
-    }
+    const initialFilters: SearchFilters = {
+      enrollee: searchCriteria.enrolleeId || "",
+      phone: "",
+      email: "",
+      pharmacy: "",
+      code: "",
+      showAll: !searchCriteria.enrolleeId,
+    };
+
+    setCurrentFilters(initialFilters);
+    getDeliveriesWithFilters(initialFilters);
 
     return () => {
       deliveryActions.clearDeliveries();
@@ -153,18 +132,9 @@ export default function DeliveriesPage() {
     };
   }, [searchCriteria.enrolleeId, getDeliveriesWithFilters]);
 
-  const handleSearch = (
-    searchTerm: string,
-    searchType?: "enrollee" | "phone" | "email" | "pharmacy" | "code",
-    showAll?: boolean
-  ) => {
-    const finalSearchType = searchType || currentSearchType;
-    const finalShowAll = showAll !== undefined ? showAll : currentShowAll;
-
-    setCurrentSearchTerm(searchTerm);
-    setCurrentSearchType(finalSearchType);
-    setCurrentShowAll(finalShowAll);
-    getDeliveriesWithFilters(searchTerm, finalSearchType, finalShowAll);
+  const handleSearch = (filters: SearchFilters) => {
+    setCurrentFilters(filters);
+    getDeliveriesWithFilters(filters);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -292,9 +262,7 @@ export default function DeliveriesPage() {
           <div className="text-center py-10 text-red-500">{error}</div>
         ) : (
           <DeliveryTable
-            currentSearchTerm={currentSearchTerm}
-            currentSearchType={currentSearchType}
-            currentShowAll={currentShowAll}
+            currentFilters={currentFilters}
             deliveries={deliveries}
             isLoading={isLoading}
             onSearch={handleSearch}
