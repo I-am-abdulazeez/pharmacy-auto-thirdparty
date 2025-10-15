@@ -14,6 +14,7 @@ import TextShowcase from "@/components/ui/text-showcase";
 import GridPattern from "@/components/ui/grid-pattern";
 import CardContainer from "@/components/ui/card-container";
 import ShineEffect from "@/components/effects/shine";
+import SlideEffect from "@/components/effects/slide";
 
 export default function LeadwayLoginPage() {
   const navigate = useNavigate();
@@ -42,9 +43,13 @@ export default function LeadwayLoginPage() {
       formData.email === "NobleZeez@admin.com" &&
       formData.password === "Password@!23"
     ) {
-      setAuthState((prev) => ({ ...prev, user: backdoorUser }));
+      setAuthState((prev) => ({
+        ...prev,
+        user: backdoorUser,
+        isLeadway: true,
+      }));
       setApiError("");
-      navigate("/pharmacy");
+      navigate("/leadway/pharmacy");
 
       return;
     }
@@ -56,12 +61,14 @@ export default function LeadwayLoginPage() {
       const response = await loginLeadway(formData);
 
       if (response.result) {
-        navigate("/enrollees");
+        navigate("/leadway/pharmacy");
       } else {
         setApiError(response.ErrorMessage || "An error occurred during login");
       }
     } catch (error) {
-      setApiError(`An unexpected error occurred: ${error}`);
+      setApiError(
+        `${(error as Error).message || "An unexpected error occurred"}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +82,9 @@ export default function LeadwayLoginPage() {
         <CardContainer>
           <div className="mb-6">
             <TextShowcase showDescription={false} />
+            <p className="text-center text-sm text-gray-600 mt-2">
+              Leadway Health Portal
+            </p>
           </div>
 
           {apiError && (
@@ -142,7 +152,6 @@ export default function LeadwayLoginPage() {
                   setFormData({ ...formData, password: e.target.value })
                 }
               />
-              {/* Input focus indicator */}
               <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#F15A24] transition-all duration-300 group-focus-within:w-full" />
             </div>
           </div>
@@ -160,7 +169,7 @@ export default function LeadwayLoginPage() {
             >
               <ShineEffect />
               <span className="relative z-10">
-                {isLoading ? "Logging in..." : "Sign in"}
+                {isLoading ? "Logging in..." : "Log In"}
               </span>
             </Button>
           </div>
@@ -173,7 +182,7 @@ export default function LeadwayLoginPage() {
             variant="flat"
             onPress={() => navigate("/")}
           >
-            <ShineEffect />
+            <SlideEffect />
             <span className="relative z-10">Go Back</span>
           </Button>
         </CardContainer>
