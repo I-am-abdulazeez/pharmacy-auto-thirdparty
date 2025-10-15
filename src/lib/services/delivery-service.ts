@@ -19,6 +19,7 @@ export const getDeliveries = async (
   phone: string = "",
   email: string = "",
   pharmacyid: string = "",
+  codetopharmacy: string = "",
   showall: boolean = false
 ): Promise<any> => {
   try {
@@ -35,6 +36,7 @@ export const getDeliveries = async (
     if (phone) params.append("phone", phone);
     if (email) params.append("email", email);
     if (pharmacyid) params.append("pharmacyid", pharmacyid);
+    if (codetopharmacy) params.append("codetopharmacy", codetopharmacy)
     params.append("showall", String(showall));
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
