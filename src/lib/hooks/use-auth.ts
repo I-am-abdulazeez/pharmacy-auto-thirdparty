@@ -8,6 +8,8 @@ export function useAuth() {
   return {
     isAuthenticated: !!state.user,
     user: state.user,
-    isLoading: state.isLoading
+    isLoading: state.isLoading,
+    isLeadway: state.isLeadway,
+    isProvider: state.isProvider,
   };
 }
