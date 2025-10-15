@@ -4,6 +4,7 @@ import { Input } from "@heroui/input";
 
 import { appChunk, authStore } from "@/lib/store/app-store";
 import { deliveryActions, deliveryFormState } from "@/lib/store/delivery-store";
+import { generateRandomCode } from "@/lib/utils";
 
 export default function EnrolleeSelectionStep() {
   const formState = useChunkValue(deliveryFormState);
@@ -27,17 +28,18 @@ export default function EnrolleeSelectionStep() {
         "enrolleeEmail",
         `${enrolleeData?.Member_EmailAddress_One}`
       );
-      deliveryActions.updateFormField("scheme_type", user.insco_id.toString());
       deliveryActions.updateFormField(
-        "schemeName",
-        enrolleeData?.client_schemename
+        "scheme_type",
+        enrolleeData?.Plan_Category
       );
-      // if (!formState.deliveryaddress) {
-      //   deliveryActions.updateFormField(
-      //     "deliveryaddress",
-      //     enrolleeData?.Member_Address
-      //   );
-      // }
+
+      // Auto-generate delivery code if not already set
+      if (!formState.deliveryaddress) {
+        const generatedCode = generateRandomCode();
+
+        deliveryActions.updateFormField("deliveryaddress", generatedCode);
+      }
+
       if (!formState.phonenumber) {
         deliveryActions.updateFormField(
           "phonenumber",
@@ -79,20 +81,23 @@ export default function EnrolleeSelectionStep() {
           </div>
         </div>
 
-        {/* Add the new editable input fields */}
+        {/* Editable input fields */}
         <div className="mt-6 grid grid-cols-2 gap-6">
-          <div>
-            {/* <Input
-              label="Delivery Address"
-              placeholder="Enter delivery address"
-              value={formState.deliveryaddress || ""}
-              onChange={(e) =>
-                handleInputChange("deliveryaddress", e.target.value)
-              }
-            /> */}
+          <div className="space-y-4">
+            {/* <div className="flex gap-2">
+              <Input
+                label="Delivery Address / Code"
+                placeholder="Enter delivery address or generate code"
+                value={formState.deliveryaddress || ""}
+                onChange={(e) =>
+                  handleInputChange("deliveryaddress", e.target.value)
+                }
+              />
+            </div> */}
             <Input
               label="Email Address"
               placeholder="Enter Email Address"
+              type="email"
               value={formState.enrolleeEmail || ""}
               onChange={(e) =>
                 handleInputChange("enrolleeEmail", e.target.value)
@@ -103,6 +108,7 @@ export default function EnrolleeSelectionStep() {
             <Input
               label="Phone Number"
               placeholder="Enter phone number"
+              type="tel"
               value={formState.phonenumber || ""}
               onChange={(e) => handleInputChange("phonenumber", e.target.value)}
             />
