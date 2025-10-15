@@ -5,37 +5,57 @@ import { PharmacyIcon, EnrolleeIcon, DeliveryIcon } from "@/components/icons";
 
 interface SideNavProps {
   currentPath: string;
+  userType: "leadway" | "provider";
   onClose?: () => void;
 }
 
-const navLinks = [
+const leadwayLinks = [
   {
     name: "Pharmacy",
-    path: "/pharmacy",
+    path: "/leadway/pharmacy",
     icon: PharmacyIcon,
   },
   {
     name: "Enrollees",
-    path: "/enrollees",
+    path: "/leadway/enrollees",
     icon: EnrolleeIcon,
   },
   {
     name: "Deliveries",
-    path: "/deliveries",
+    path: "/leadway/deliveries",
     icon: DeliveryIcon,
   },
 ];
 
-export default function SideNav({ currentPath, onClose }: SideNavProps) {
+const providerLinks = [
+  {
+    name: "Deliveries",
+    path: "/provider/deliveries",
+    icon: DeliveryIcon,
+  },
+];
+
+export default function SideNav({
+  currentPath,
+  userType,
+  onClose,
+}: SideNavProps) {
+  const navLinks = userType === "leadway" ? leadwayLinks : providerLinks;
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-        <img
-          alt="Logo"
-          className="mx-auto h-12 w-auto"
-          src="/leadway-logo.png"
-        />
+        <div className="flex flex-col items-center w-full">
+          <img
+            alt="Logo"
+            className="h-12 w-auto mb-2"
+            src="/leadway-logo.png"
+          />
+          <span className="text-xs text-gray-500 font-medium">
+            {userType === "leadway" ? "Leadway Portal" : "Provider Portal"}
+          </span>
+        </div>
         {onClose && (
           <Button
             isIconOnly
@@ -113,6 +133,9 @@ export default function SideNav({ currentPath, onClose }: SideNavProps) {
       <div className="p-4 border-t border-gray-200">
         <div className="px-4 py-3 bg-gray-100 rounded-lg">
           <p className="text-xs text-gray-600">Version 1.0.0</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {userType === "leadway" ? "Leadway Health" : "Provider Access"}
+          </p>
         </div>
       </div>
     </div>
