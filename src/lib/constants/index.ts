@@ -49,23 +49,31 @@ export const backdoorUser: User = {
   rightofconnection: null,
 };
 
-export const DELIVERY_COLUMNS =
-  [
-    { key: "enrolleeName", label: "Enrollee Name" },
-    { key: "email", label: "Enrollee Email" },
-    { key: "schemeType", label: "Scheme Type" },
-    { key: "enrolleeId", label: "Enrollee ID" },
-    { key: "inputtedDate", label: "Input Date" },
-    { key: "codeExpiryDate", label: "Code Expiry" },
-    { key: "diagnosisName", label: "Diagnosis" },
-    { key: "procedureName", label: "Procedure" },
-    { key: "dosageDescription", label: "Dosage" },
-    { key: "comment", label: "Comment" },
-    { key: "cost", label: "Cost" },
-    { key: "payDate", label: "Pay Date" },
-    { key: "deliveryStatus", label: "Status" },
-    { key: "actions", label: "Actions" },
-  ]
+export const DELIVERY_COLUMNS = [
+  { key: "enrolleeName", label: "Enrollee Name" },
+  { key: "email", label: "Enrollee Email" },
+  { key: "schemeType", label: "Scheme Type" },
+  { key: "enrolleeId", label: "Enrollee ID" },
+  { key: "inputtedDate", label: "Input Date" },
+  { key: "codeExpiryDate", label: "Code Expiry" },
+  { key: "diagnosisName", label: "Diagnosis" },
+  { key: "procedureName", label: "Procedure" },
+  { key: "dosageDescription", label: "Dosage" },
+  { key: "comment", label: "Comment" },
+  { key: "cost", label: "Cost" },
+  { key: "payDate", label: "Pay Date" },
+  { key: "deliveryStatus", label: "Status" },
+  { key: "actions", label: "Actions" },
+]
+
+export const AUTOLINE_COLUMNS = [
+  { key: "EnrolleeName", label: "Enrollee Name" },
+  { key: "procedurename", label: "Procedure" },
+  { key: "phonenumber", label: "Phone Number" },
+  { key: "cost", label: "Cost" },
+  { key: "scheme_type", label: "Scheme" },
+  { key: "ispaid", label: "Status" },
+];
 
 export const PROVIDERS_COLUMNS = [
   { key: "serial", label: "S/N" },
