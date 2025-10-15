@@ -26,7 +26,7 @@ export default function EnrolleeSelectionStep() {
       );
       deliveryActions.updateFormField(
         "enrolleeEmail",
-        `${enrolleeData?.Member_EmailAddress_One}`
+        `${enrolleeData?.Member_EmailAddress_One || formState.enrolleeEmail}`
       );
       deliveryActions.updateFormField(
         "scheme_type",
