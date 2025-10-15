@@ -2,7 +2,7 @@ import toast from "react-hot-toast";
 import { Dispatch, SetStateAction } from "react";
 
 import { deliveryStore } from "../store/delivery-store";
-import { API_URL, programmaticNavigate, transformApiResponse } from "../utils";
+import { API_URL, transformApiResponse } from "../utils";
 
 import { Delivery } from "@/types";
 
@@ -135,7 +135,6 @@ export const createDelivery = async (
       if (enrolleeId) {
         await getDeliveries(enrolleeId);
       }
-      programmaticNavigate("/enrollees");
     }
 
     return {
