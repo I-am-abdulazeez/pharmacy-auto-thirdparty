@@ -15,7 +15,7 @@ export const backdoorUser: User = {
   LockoutEnabled: false,
   AccessFailedCount: 0,
   insco_id: 0,
-  provider_id: null,
+  provider_id: 8620,
   surname: "Zeez",
   firstname: "Noble",
   ModifiedDateTime: new Date().toISOString(),
