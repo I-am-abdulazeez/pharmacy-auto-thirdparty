@@ -26,10 +26,10 @@ export const initialFormState = {
   pharmacyName: "",
 
   deliveryFrequency: "",
-  delStartDate: "",
-  nextDeliveryDate: "",
+  delStartDate: "" as string | null,
+  nextDeliveryDate: "" as string | null,
   frequencyDuration: "",
-  endDate: "",
+  endDate: "" as string | null,
 
   diagnosisLines: [] as Diagnosis[],
   procedureLines: [] as Procedure[],
@@ -348,10 +348,10 @@ export const deliveryActions = {
         SchemeId: formData.schemeId,
         SchemeName: formData.schemeName,
         DeliveryFrequency: formData.deliveryFrequency,
-        DelStartDate: formData.delStartDate,
-        NextDeliveryDate: formData.nextDeliveryDate,
+        DelStartDate: "2025-10-14T00:00:00",
+        NextDeliveryDate: "2025-10-21T00:00:00",
+        EndDate: "2025-11-14T00:00:00",
         FrequencyDuration: formData.enrolleeEmail,
-        EndDate: formData.endDate,
         DiagnosisLines: formData.diagnosisLines,
         ProcedureLines: formData.procedureLines,
         AdditionalInformation: formData.additionalInformation,
@@ -369,7 +369,6 @@ export const deliveryActions = {
 
       const deliveryEdit = {
         EnrolleeId: formData.enrolleeId,
-        // EnrolleeName: "",
         EnrolleeAge: formData.enrolleeAge,
         SchemeId: formData.schemeId,
         SchemeName: formData.schemeName,
@@ -398,12 +397,13 @@ export const deliveryActions = {
       };
 
       const { editDelivery, createDelivery } = await import("@/lib/services/delivery-service");
+      const { sendSms } = await import("@/lib/services/sms-service");
+      const { sendPhaEmailAlert } = await import("@/lib/services/mail-service");
 
       let response;
 
       if (formData.isEditing) {
         response = await editDelivery(deliveryEdit);
-        console.log(deliveryEdit)
       } else {
         const formattedData = {
           Deliveries: [delivery],
@@ -411,15 +411,11 @@ export const deliveryActions = {
         };
         const shouldSkipNavigation = !confirmDuplicates;
 
-        console.log(formattedData)
-
         response = await createDelivery(formattedData, shouldSkipNavigation);
       }
 
-
-      // Check for duplicate procedures using the correct response structure
+      // Check for duplicate procedures
       if (!confirmDuplicates && !formData.isEditing) {
-        // Check if we have the nested result structure with duplicate detection
         const result = response.result || response;
         const isDuplicateResponse = result.RequiresConfirmation === true ||
           (result.status === 409 && result.ReturnMessage &&
@@ -428,9 +424,6 @@ export const deliveryActions = {
         if (isDuplicateResponse) {
           const warnings = result.Warnings || [];
           const duplicateDeliveries = warnings.map((warning: string, index: number) => {
-            // Extract information from warning message
-            // Warning format: "Warning: Procedure 'IRON SUCROSE 200MG INJ' (ID: B0320011) already exists for Enrollee 'Mrs Favour Mbaekwe' (ID: 21000645/0) with overlapping dates. Existing end date: 2025-10-12, New start date: 2025-07-12"
-
             const procedureNameMatch = warning.match(/Procedure '([^']+)'/);
             const procedureIdMatch = warning.match(/\(ID: ([^)]+)\)/);
             const enrolleeNameMatch = warning.match(/Enrollee '([^']+)'/);
@@ -442,7 +435,7 @@ export const deliveryActions = {
               DeliveryId: `DUPLICATE-${index + 1}`,
               EnrolleeName: enrolleeNameMatch ? enrolleeNameMatch[1] : formData.enrolleeName,
               EnrolleeId: enrolleeIdMatch ? enrolleeIdMatch[1] : formData.enrolleeId,
-              DeliveryFrequency: "Existing Delivery", // We don't have this info in warning
+              DeliveryFrequency: "Existing Delivery",
               EndDate: endDateMatch ? endDateMatch[1].trim() : "Unknown",
               StartDate: startDateMatch ? startDateMatch[1].trim() : "Unknown",
               ProcedureLines: [{
@@ -458,7 +451,6 @@ export const deliveryActions = {
           return response;
         }
 
-        // Fallback: Check original response structure
         if (response.Deliveries && response.Deliveries.length > 0) {
           const existingDeliveries = response.Deliveries.filter((d: any) => d.DeliveryId !== null);
 
@@ -470,7 +462,7 @@ export const deliveryActions = {
         }
       }
 
-      // Handle actual errors (not duplicate warnings)
+      // Handle errors
       const result = response.result || response;
       const isSuccess = response.status === 200 && (!result.status || result.status === 200 || result.status === 409);
       const hasErrors = result.Errors?.length > 0;
@@ -479,7 +471,6 @@ export const deliveryActions = {
         const isDuplicateMessage = result.ReturnMessage &&
           result.ReturnMessage.toLowerCase().includes("duplicate");
 
-        // Only show error toast if it's not a duplicate message
         if (!isDuplicateMessage) {
           toast.error(result.ReturnMessage ||
             (formData.isEditing ? "Failed to update delivery" : "Failed to create delivery"));
@@ -488,15 +479,88 @@ export const deliveryActions = {
         return response;
       }
 
-      // Success handling
-      if (confirmDuplicates) {
-        toast.success("Delivery created successfully with duplicate confirmation!", {
-          icon: "⚠️",
-          duration: 4000,
-        });
+      // Success handling - Send SMS and Email for new deliveries
+      if (!formData.isEditing) {
+        let smsSuccess = false;
+        let emailSuccess = false;
+
+        // Send SMS
+        if (formData.phonenumber && formData.deliveryaddress) {
+          try {
+            const smsMessage = `Your pharmacy pickup code is: ${formData.deliveryaddress}. Please use this code to collect your medication. Thank you.`;
+
+            const smsPayload = {
+              To: formData.phonenumber,
+              Message: smsMessage,
+              Source: "Pharmacy Delivery",
+              SourceId: user?.User_id || 0,
+              TemplateId: 0,
+              PolicyNumber: formData.enrolleeId,
+              ReferenceNo: formData.deliveryaddress,
+              UserId: user?.User_id || 0,
+            };
+
+            await sendSms(smsPayload);
+            smsSuccess = true;
+          } catch (smsError) {
+            toast.error(`SMS failed to send: ${smsError}`);
+          }
+        }
+
+        // Send Email
+        if (formData.enrolleeEmail) {
+          try {
+            const procedureNames = formData.procedureLines.map(p => p.ProcedureName);
+            const diagnosisNames = formData.diagnosisLines.map(d => d.DiagnosisName);
+
+            const emailTemplateData = {
+              procedureName: procedureNames,
+              diagnosisName: diagnosisNames,
+              enrolleeName: formData.enrolleeName,
+              enrolleeId: formData.enrolleeId,
+              deliveryAddress: formData.deliveryaddress,
+              phoneNumber: formData.phonenumber,
+              deliveryFrequency: formData.deliveryFrequency,
+              startDate: formData.delStartDate || "",
+              nextDeliveryDate: formData.nextDeliveryDate || "",
+              endDate: formData.endDate || "",
+              pharmacyName: formData.pharmacyName,
+              cost: formData.cost,
+              dosageDescription: formData.dosageDescription,
+              additionalInformation: formData.additionalInformation,
+              comment: formData.comment,
+            };
+
+            await sendPhaEmailAlert(emailTemplateData);
+            emailSuccess = true;
+          } catch (emailError) {
+            toast.error(`Email failed to send: ${emailError}`);
+          }
+        }
+
+        // Show appropriate success message
+        if (smsSuccess && emailSuccess) {
+          if (confirmDuplicates) {
+            toast.success("Delivery created with duplicate confirmation. SMS and Email sent!", {
+              duration: 4000,
+            });
+          } else {
+            toast.success("Delivery created! SMS and Email sent successfully!");
+          }
+        } else if (smsSuccess || emailSuccess) {
+          const sentItems = [smsSuccess && "SMS", emailSuccess && "Email"].filter(Boolean).join(" and ");
+
+          toast.success(`Delivery created! ${sentItems} sent successfully.`);
+        } else if (confirmDuplicates) {
+          toast.success("Delivery created with duplicate confirmation!", {
+            icon: "⚠️",
+            duration: 4000,
+          });
+        } else {
+          toast.success("Delivery created successfully!");
+        }
       } else {
-        toast.success(response.ReturnMessage ||
-          (formData.isEditing ? "Delivery updated successfully!" : "Delivery created successfully!"));
+        toast.success(response.ReturnMessage || "Delivery updated successfully!");
       }
 
       deliveryActions.closeModal();
