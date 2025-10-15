@@ -21,7 +21,6 @@ import {
 import { Badge } from "@heroui/badge";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
 import { Spinner } from "@heroui/spinner";
 import { Checkbox } from "@heroui/checkbox";
 import { Key } from "@react-types/shared";
@@ -37,15 +36,22 @@ import { DELIVERY_COLUMNS } from "@/lib/constants";
 interface DeliveryTableProps {
   deliveries: Delivery[];
   isLoading?: boolean;
-  onSearch?: (
-    searchTerm: string,
-    searchType?: "enrollee" | "phone" | "email" | "pharmacy" | "code",
-    showAll?: boolean
-  ) => void;
-  onReassignToRider?: (selectedDeliveries: any[]) => void;
-  currentSearchTerm?: string;
-  currentSearchType?: "enrollee" | "phone" | "email" | "pharmacy" | "code";
-  currentShowAll?: boolean;
+  onSearch?: (filters: {
+    enrollee: string;
+    phone: string;
+    email: string;
+    pharmacy: string;
+    code: string;
+    showAll: boolean;
+  }) => void;
+  currentFilters?: {
+    enrollee: string;
+    phone: string;
+    email: string;
+    pharmacy: string;
+    code: string;
+    showAll: boolean;
+  };
 }
 
 interface RowItem {
@@ -73,9 +79,14 @@ export default function DeliveryTable({
   deliveries,
   isLoading = false,
   onSearch,
-  currentSearchTerm = "",
-  currentSearchType = "enrollee",
-  currentShowAll = false,
+  currentFilters = {
+    enrollee: "",
+    phone: "",
+    email: "",
+    pharmacy: "",
+    code: "",
+    showAll: false,
+  },
 }: DeliveryTableProps) {
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
   const [isEditing, setIsEditing] = useState<Record<string, boolean>>({});
@@ -87,17 +98,11 @@ export default function DeliveryTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(50);
 
-  const [searchTerm, setSearchTerm] = useState(currentSearchTerm);
-  const [searchType, setSearchType] = useState<
-    "enrollee" | "phone" | "email" | "pharmacy" | "code"
-  >(currentSearchType);
-  const [showAll, setShowAll] = useState(currentShowAll);
+  const [filters, setFilters] = useState(currentFilters);
 
   useEffect(() => {
-    setSearchTerm(currentSearchTerm);
-    setSearchType(currentSearchType);
-    setShowAll(currentShowAll);
-  }, [currentSearchTerm, currentSearchType, currentShowAll]);
+    setFilters(currentFilters);
+  }, [currentFilters]);
 
   const handleDeleteClick = (delivery: any) => {
     setDeleteConfirmation({ isOpen: true, delivery });
@@ -130,57 +135,65 @@ export default function DeliveryTable({
     }
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleSearchTypeChange = (value: string) => {
-    setSearchType(
-      value as "enrollee" | "phone" | "email" | "pharmacy" | "code"
-    );
-    setSearchTerm("");
-    setCurrentPage(1);
-    if (onSearch) {
-      onSearch(
-        "",
-        value as "enrollee" | "phone" | "email" | "pharmacy" | "code",
-        showAll
-      );
-    }
+  const handleFilterChange = (field: string, value: string) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSearch = () => {
     setCurrentPage(1);
     if (onSearch) {
-      onSearch(searchTerm, searchType, showAll);
+      // If any filter has a value, set showAll to false
+      const hasActiveFilters =
+        filters.enrollee ||
+        filters.phone ||
+        filters.email ||
+        filters.pharmacy ||
+        filters.code;
+
+      onSearch({
+        ...filters,
+        showAll: hasActiveFilters ? false : filters.showAll,
+      });
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
+  const handleClearAll = () => {
+    const clearedFilters = {
+      enrollee: "",
+      phone: "",
+      email: "",
+      pharmacy: "",
+      code: "",
+      showAll: filters.showAll,
+    };
 
-  const handleClearSearch = () => {
-    setSearchTerm("");
+    setFilters(clearedFilters);
     setCurrentPage(1);
     if (onSearch) {
-      onSearch("", searchType, showAll);
+      onSearch(clearedFilters);
     }
   };
 
   const handleShowAllChange = (checked: boolean) => {
-    setShowAll(checked);
+    const newFilters = { ...filters, showAll: checked };
+
+    setFilters(newFilters);
     setCurrentPage(1);
     if (onSearch) {
-      onSearch(searchTerm, searchType, checked);
+      onSearch(newFilters);
     }
   };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
+
+  const hasActiveFilters =
+    filters.enrollee ||
+    filters.phone ||
+    filters.email ||
+    filters.pharmacy ||
+    filters.code;
 
   const rows = useMemo(
     () =>
@@ -312,62 +325,75 @@ export default function DeliveryTable({
     }
   };
 
-  const getSearchPlaceholder = (searchType: string): string => {
-    switch (searchType) {
-      case "enrollee":
-        return "Search by Enrollee ID or Name";
-      case "phone":
-        return "Search by Phone Number";
-      case "email":
-        return "Search by Email";
-      case "pharmacy":
-        return "Search by Pharmacy ID";
-      case "code":
-        return "Search by Pickup Code";
-      default:
-        return "Search...";
-    }
-  };
-
   const showNoResults =
     !isLoading &&
     filteredRows.length === 0 &&
-    (searchTerm || deliveries.length > 0);
+    (hasActiveFilters || deliveries.length > 0);
   const showInitialMessage =
-    !isLoading && deliveries.length === 0 && !searchTerm;
+    !isLoading && deliveries.length === 0 && !hasActiveFilters;
 
   return (
     <>
       <div className="mb-6 flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="flex w-full sm:w-auto items-center flex-1 gap-2">
-            <Select
-              aria-label="search-type"
-              className="w-48"
-              placeholder="Search by"
-              radius="sm"
-              selectedKeys={[searchType]}
-              onSelectionChange={(keys) => {
-                const key = Array.from(keys)[0] as string;
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <Input
+            label="Enrollee ID/Name"
+            placeholder="Search enrollee..."
+            radius="sm"
+            value={filters.enrollee}
+            onChange={(e) => handleFilterChange("enrollee", e.target.value)}
+          />
 
-                handleSearchTypeChange(key);
-              }}
+          <Input
+            label="Phone Number"
+            placeholder="Search phone..."
+            radius="sm"
+            value={filters.phone}
+            onChange={(e) => handleFilterChange("phone", e.target.value)}
+          />
+
+          <Input
+            label="Email"
+            placeholder="Search email..."
+            radius="sm"
+            type="email"
+            value={filters.email}
+            onChange={(e) => handleFilterChange("email", e.target.value)}
+          />
+
+          <Input
+            label="Pharmacy ID"
+            placeholder="Search pharmacy..."
+            radius="sm"
+            value={filters.pharmacy}
+            onChange={(e) => handleFilterChange("pharmacy", e.target.value)}
+          />
+
+          <Input
+            label="Pickup Code"
+            placeholder="Search code..."
+            radius="sm"
+            value={filters.code}
+            onChange={(e) => handleFilterChange("code", e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Checkbox
+              isSelected={filters.showAll}
+              onValueChange={handleShowAllChange}
             >
-              <SelectItem key="enrollee">Enrollee (ID/Name)</SelectItem>
-              <SelectItem key="phone">Phone Number</SelectItem>
-              <SelectItem key="email">Email</SelectItem>
-              <SelectItem key="pharmacy">Pharmacy ID</SelectItem>
-              <SelectItem key="code">Pickup Code</SelectItem>
-            </Select>
-            <Input
-              className="flex-1"
-              placeholder={getSearchPlaceholder(searchType)}
-              radius="sm"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              onKeyUp={handleKeyPress}
-            />
+              <span className="text-sm font-medium">Show All Deliveries</span>
+            </Checkbox>
+            {filters.showAll && (
+              <span className="text-xs text-gray-500 italic">
+                Displaying all deliveries regardless of search criteria
+              </span>
+            )}
+          </div>
 
+          <div className="flex gap-2">
             <Button
               color="primary"
               isDisabled={isLoading}
@@ -376,49 +402,27 @@ export default function DeliveryTable({
             >
               {isLoading ? <Spinner color="white" size="sm" /> : "Search"}
             </Button>
-            {searchTerm && (
+            {hasActiveFilters && (
               <Button
                 color="default"
                 isDisabled={isLoading}
                 radius="sm"
-                onPress={handleClearSearch}
+                variant="flat"
+                onPress={handleClearAll}
               >
-                Clear
+                Clear All
               </Button>
             )}
           </div>
         </div>
 
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Checkbox isSelected={showAll} onValueChange={handleShowAllChange}>
-              <span className="text-sm font-medium">Show All Deliveries</span>
-            </Checkbox>
-            {showAll && (
-              <span className="text-xs text-gray-500 italic">
-                Displaying all deliveries regardless of search criteria
-              </span>
-            )}
-          </div>
+        {hasActiveFilters && !filters.showAll && (
           <div className="text-sm text-gray-600">
-            {searchTerm && !showAll && (
-              <span>
-                {`Searching for "${searchTerm}" in `}
-                {searchType === "enrollee"
-                  ? "Enrollee ID/Name"
-                  : searchType === "phone"
-                    ? "Phone Number"
-                    : searchType === "email"
-                      ? "Email"
-                      : searchType === "pharmacy"
-                        ? "Pharmacy ID"
-                        : "Pickup Code"}
-                {filteredRows.length > 0 &&
-                  ` - Found ${filteredRows.length} result(s)`}
-              </span>
-            )}
+            <span>Searching with active filters</span>
+            {filteredRows.length > 0 &&
+              ` - Found ${filteredRows.length} result(s)`}
           </div>
-        </div>
+        )}
       </div>
 
       {showInitialMessage && (
@@ -432,7 +436,7 @@ export default function DeliveryTable({
         <div className="text-center p-8 text-gray-500">
           <p>No deliveries found matching your search criteria.</p>
           <p className="text-sm mt-2">
-            Try adjusting your search term or search by a different field.
+            Try adjusting your search filters or clear all to start over.
           </p>
         </div>
       )}
@@ -451,7 +455,7 @@ export default function DeliveryTable({
               <div className="flex w-full justify-between items-center">
                 <p className="text-small text-gray-500">
                   Total: {filteredRows.length} deliveries
-                  {searchTerm && <span> (search results)</span>}
+                  {hasActiveFilters && <span> (search results)</span>}
                 </p>
                 <Pagination
                   isCompact
@@ -478,7 +482,7 @@ export default function DeliveryTable({
                   </p>
                   <p className="text-xs text-gray-500">
                     Total: {filteredRows.length} deliveries
-                    {searchTerm && <span> (search results)</span>}
+                    {hasActiveFilters && <span> (search results)</span>}
                   </p>
                 </div>
               </div>
