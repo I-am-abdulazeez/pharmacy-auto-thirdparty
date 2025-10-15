@@ -11,19 +11,6 @@ export default function AdditionalInfoStep() {
       <h3 className="text-lg font-medium mb-4">Additional Information</h3>
 
       <Input
-        className="mb-4"
-        label="Alternative Phone Number"
-        placeholder="Enter Alt Phone Number"
-        value={formState.additionalInformation}
-        onChange={(e) =>
-          deliveryActions.updateFormField(
-            "additionalInformation",
-            e.target.value
-          )
-        }
-      />
-
-      <Input
         label="Comment"
         placeholder="Enter Comment"
         value={formState.comment}
