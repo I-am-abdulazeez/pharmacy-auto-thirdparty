@@ -4,32 +4,6 @@ import { EnrolleeData } from "../services/enrollee-service";
 
 import { User } from "@/types";
 
-interface Rider {
-  FullName: string;
-  rider_id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  date_of_birth: string | null;
-  gender: string;
-  address_line1: string;
-  address_line2: string | null;
-  city: string;
-  state_province: string | null;
-  postal_code: string;
-  country: string;
-  emergency_contact_name: string;
-  emergency_contact_phone: string;
-  license_number: string | null;
-  license_expiry_date: string | null;
-  registration_date: string;
-  last_updated: string;
-  status: string;
-  profile_picture_url: string | null;
-  notes: string | null;
-}
-
 export type SearchCriteria = {
   enrolleeId: string;
   firstName: string;
@@ -56,15 +30,15 @@ export const appChunk = chunk({
 type AuthState = {
   user: User | null;
   isLoading: boolean;
-  rider: Rider | null;
-  isRIder: boolean,
+  isLeadway: boolean;
+  isProvider: boolean;
 };
 
 export const authStore = chunk<AuthState>({
   isLoading: false,
   user: null,
-  rider: null,
-  isRIder: false
+  isLeadway: false,
+  isProvider: false,
 })
 
 export const resetProviderFilters = (stateId: string) => {
