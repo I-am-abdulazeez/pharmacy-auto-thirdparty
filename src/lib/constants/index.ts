@@ -49,19 +49,22 @@ export const backdoorUser: User = {
   rightofconnection: null,
 };
 
-export const DELIVERY_COLUMNS = [
-  { key: "enrollee", label: "Enrollee" },
-  // { key: "startDate", label: "Start Date" },
-  { key: "nextDelivery", label: "Next Delivery" },
-  { key: "frequency", label: "Frequency" },
-  { key: "memberstatus", label: "Member Status" },
-  // { key: "isDelivered", label: "Is Delivered" },
-  { key: "status", label: "Delivery Status" },
-  { key: "deliveryaddress", label: "Delivery Address" },
-  { key: "diagnosisname", label: "Diagnosis" },
-  { key: "procedurename", label: "Procedure" },
-  { key: "pharmacyname", label: "Pharmacy Name" },
-];
+export const DELIVERY_COLUMNS =
+  [
+    { key: "enrolleeName", label: "Enrollee Name" },
+    { key: "schemeType", label: "Scheme Type" },
+    { key: "enrolleeId", label: "Enrollee ID" },
+    { key: "inputtedDate", label: "Input Date" },
+    { key: "codeExpiryDate", label: "Code Expiry" },
+    { key: "diagnosisName", label: "Diagnosis" },
+    { key: "procedureName", label: "Procedure" },
+    { key: "dosageDescription", label: "Dosage" },
+    { key: "comment", label: "Comment" },
+    { key: "cost", label: "Cost" },
+    { key: "payDate", label: "Pay Date" },
+    { key: "deliveryStatus", label: "Status" },
+    { key: "actions", label: "Actions" },
+  ]
 
 export const PROVIDERS_COLUMNS = [
   { key: "serial", label: "S/N" },
