@@ -1,7 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "@heroui/button";
 
-import { PharmacyIcon, EnrolleeIcon, DeliveryIcon } from "@/components/icons";
+import {
+  PharmacyIcon,
+  EnrolleeIcon,
+  DeliveryIcon,
+  PayAutoLineIcon,
+} from "@/components/icons";
 
 interface SideNavProps {
   currentPath: string;
@@ -29,9 +34,9 @@ const leadwayLinks = [
 
 const providerLinks = [
   {
-    name: "Deliveries",
-    path: "/provider/deliveries",
-    icon: DeliveryIcon,
+    name: "Pay AutoLine",
+    path: "/provider/pay-autoline",
+    icon: PayAutoLineIcon,
   },
 ];
 
