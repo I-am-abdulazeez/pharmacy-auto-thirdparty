@@ -23,6 +23,7 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { Spinner } from "@heroui/spinner";
+import { Checkbox } from "@heroui/checkbox";
 import { Key } from "@react-types/shared";
 import toast from "react-hot-toast";
 
@@ -38,11 +39,13 @@ interface DeliveryTableProps {
   isLoading?: boolean;
   onSearch?: (
     searchTerm: string,
-    searchType?: "enrollee" | "pharmacy" | "address"
+    searchType?: "enrollee" | "phone" | "email" | "pharmacy" | "code",
+    showAll?: boolean
   ) => void;
   onReassignToRider?: (selectedDeliveries: any[]) => void;
   currentSearchTerm?: string;
-  currentSearchType?: "enrollee" | "pharmacy" | "address";
+  currentSearchType?: "enrollee" | "phone" | "email" | "pharmacy" | "code";
+  currentShowAll?: boolean;
 }
 
 interface RowItem {
@@ -50,6 +53,7 @@ interface RowItem {
   enrolleeName: string;
   schemeType: string;
   enrolleeId: string;
+  email: string;
   inputtedDate: string;
   payDate: string;
   codeExpiryDate: string;
@@ -71,6 +75,7 @@ export default function DeliveryTable({
   onSearch,
   currentSearchTerm = "",
   currentSearchType = "enrollee",
+  currentShowAll = false,
 }: DeliveryTableProps) {
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
   const [isEditing, setIsEditing] = useState<Record<string, boolean>>({});
@@ -84,13 +89,15 @@ export default function DeliveryTable({
 
   const [searchTerm, setSearchTerm] = useState(currentSearchTerm);
   const [searchType, setSearchType] = useState<
-    "enrollee" | "pharmacy" | "address"
+    "enrollee" | "phone" | "email" | "pharmacy" | "code"
   >(currentSearchType);
+  const [showAll, setShowAll] = useState(currentShowAll);
 
   useEffect(() => {
     setSearchTerm(currentSearchTerm);
-    setSearchType(currentSearchType as "enrollee" | "pharmacy" | "address");
-  }, [currentSearchTerm, currentSearchType]);
+    setSearchType(currentSearchType);
+    setShowAll(currentShowAll);
+  }, [currentSearchTerm, currentSearchType, currentShowAll]);
 
   const handleDeleteClick = (delivery: any) => {
     setDeleteConfirmation({ isOpen: true, delivery });
@@ -128,18 +135,24 @@ export default function DeliveryTable({
   };
 
   const handleSearchTypeChange = (value: string) => {
-    setSearchType(value as "enrollee" | "pharmacy" | "address");
+    setSearchType(
+      value as "enrollee" | "phone" | "email" | "pharmacy" | "code"
+    );
     setSearchTerm("");
     setCurrentPage(1);
     if (onSearch) {
-      onSearch("", value as "enrollee" | "pharmacy" | "address");
+      onSearch(
+        "",
+        value as "enrollee" | "phone" | "email" | "pharmacy" | "code",
+        showAll
+      );
     }
   };
 
   const handleSearch = () => {
     setCurrentPage(1);
     if (onSearch) {
-      onSearch(searchTerm, searchType);
+      onSearch(searchTerm, searchType, showAll);
     }
   };
 
@@ -153,7 +166,15 @@ export default function DeliveryTable({
     setSearchTerm("");
     setCurrentPage(1);
     if (onSearch) {
-      onSearch("", searchType);
+      onSearch("", searchType, showAll);
+    }
+  };
+
+  const handleShowAllChange = (checked: boolean) => {
+    setShowAll(checked);
+    setCurrentPage(1);
+    if (onSearch) {
+      onSearch(searchTerm, searchType, checked);
     }
   };
 
@@ -216,6 +237,8 @@ export default function DeliveryTable({
         );
       case "enrolleeId":
         return <span className="text-sm text-gray-700">{item.enrolleeId}</span>;
+      case "email":
+        return <span className="text-sm text-gray-700">{item.email}</span>;
       case "inputtedDate":
         return <span className="text-sm">{item.inputtedDate}</span>;
       case "payDate":
@@ -293,10 +316,14 @@ export default function DeliveryTable({
     switch (searchType) {
       case "enrollee":
         return "Search by Enrollee ID or Name";
+      case "phone":
+        return "Search by Phone Number";
+      case "email":
+        return "Search by Email";
       case "pharmacy":
-        return "Search by Pharmacy Name";
-      case "address":
-        return "Search by Region";
+        return "Search by Pharmacy ID";
+      case "code":
+        return "Search by Pickup Code";
       default:
         return "Search...";
     }
@@ -327,8 +354,10 @@ export default function DeliveryTable({
               }}
             >
               <SelectItem key="enrollee">Enrollee (ID/Name)</SelectItem>
-              <SelectItem key="pharmacy">Pharmacy</SelectItem>
-              <SelectItem key="address">Region</SelectItem>
+              <SelectItem key="phone">Phone Number</SelectItem>
+              <SelectItem key="email">Email</SelectItem>
+              <SelectItem key="pharmacy">Pharmacy ID</SelectItem>
+              <SelectItem key="code">Pickup Code</SelectItem>
             </Select>
             <Input
               className="flex-1"
@@ -361,15 +390,29 @@ export default function DeliveryTable({
         </div>
 
         <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Checkbox isSelected={showAll} onValueChange={handleShowAllChange}>
+              <span className="text-sm font-medium">Show All Deliveries</span>
+            </Checkbox>
+            {showAll && (
+              <span className="text-xs text-gray-500 italic">
+                Displaying all deliveries regardless of search criteria
+              </span>
+            )}
+          </div>
           <div className="text-sm text-gray-600">
-            {searchTerm && (
+            {searchTerm && !showAll && (
               <span>
                 {`Searching for "${searchTerm}" in `}
                 {searchType === "enrollee"
                   ? "Enrollee ID/Name"
-                  : searchType === "pharmacy"
-                    ? "Pharmacy Name"
-                    : "Delivery Address"}
+                  : searchType === "phone"
+                    ? "Phone Number"
+                    : searchType === "email"
+                      ? "Email"
+                      : searchType === "pharmacy"
+                        ? "Pharmacy ID"
+                        : "Pickup Code"}
                 {filteredRows.length > 0 &&
                   ` - Found ${filteredRows.length} result(s)`}
               </span>
@@ -380,8 +423,8 @@ export default function DeliveryTable({
 
       {showInitialMessage && (
         <div className="text-center p-8 text-gray-500">
-          No deliveries found. Search by Enrollee ID, Pharmacy Name, or Delivery
-          Address to get started.
+          No deliveries found. Use the search filters to find deliveries by
+          Enrollee ID, Phone, Email, Pharmacy ID, or Pickup Code.
         </div>
       )}
 
