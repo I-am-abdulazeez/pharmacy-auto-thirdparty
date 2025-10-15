@@ -85,8 +85,8 @@ export type Procedure = {
 export type Delivery = {
   // Core delivery fields
   DeliveryFrequency?: string;
-  DelStartDate?: string;
-  NextDeliveryDate?: string;
+  DelStartDate?: string | null;
+  NextDeliveryDate?: string | null;
   DiagnosisLines: Diagnosis[];
   ProcedureLines: Procedure[];
   Username: string;
@@ -114,7 +114,7 @@ export type Delivery = {
 
   // Additional fields
   FrequencyDuration?: string;
-  EndDate?: string;
+  EndDate?: string | null;
   Status?: string;
   memberstatus?: string;
   recipientcode?: string;
