@@ -53,8 +53,9 @@ export default function DeliveriesPage() {
   // State for search filters
   const [currentSearchTerm, setCurrentSearchTerm] = useState("");
   const [currentSearchType, setCurrentSearchType] = useState<
-    "enrollee" | "pharmacy" | "address"
+    "enrollee" | "phone" | "email" | "pharmacy" | "code"
   >("enrollee");
+  const [currentShowAll, setCurrentShowAll] = useState(false);
 
   const lastSearchRef = useRef<string>("");
   const isFetchingRef = useRef<boolean>(false);
@@ -62,9 +63,15 @@ export default function DeliveriesPage() {
   const getDeliveriesWithFilters = useCallback(
     async (
       searchTerm: string = "",
-      searchType: "enrollee" | "pharmacy" | "address" = "enrollee"
+      searchType:
+        | "enrollee"
+        | "phone"
+        | "email"
+        | "pharmacy"
+        | "code" = "enrollee",
+      showAll: boolean = false
     ) => {
-      const searchKey = `${searchTerm}-${searchType}`;
+      const searchKey = `${searchTerm}-${searchType}-${showAll}`;
 
       if (lastSearchRef.current === searchKey || isFetchingRef.current) {
         return;
@@ -78,32 +85,49 @@ export default function DeliveriesPage() {
         let phone = "";
         let email = "";
         let pharmacyid = "";
-        let showall = false;
+        let codetopharmacy = "";
+
+        // If showAll is true, ignore other filters
+        if (showAll) {
+          await getDeliveries("", "", "", "", "", true);
+          return;
+        }
 
         // Map search type to API parameters
         switch (searchType) {
           case "enrollee":
-            // Search by enrollee ID or name
             enrolleeId = searchTerm;
             break;
+          case "phone":
+            phone = searchTerm;
+            break;
+          case "email":
+            email = searchTerm;
+            break;
           case "pharmacy":
-            // Search by pharmacy ID
             pharmacyid = searchTerm;
             break;
-          case "address":
-            // For region/address search, use phone as a proxy or show all
-            phone = searchTerm;
+          case "code":
+            codetopharmacy = searchTerm;
             break;
         }
 
         // If no search term and no enrollee selected, show all
         if (!searchTerm && !searchCriteria.enrolleeId) {
-          showall = true;
+          await getDeliveries("", "", "", "", "", true);
         } else if (!searchTerm && searchCriteria.enrolleeId) {
           enrolleeId = searchCriteria.enrolleeId;
+          await getDeliveries(enrolleeId, "", "", "", "", false);
+        } else {
+          await getDeliveries(
+            enrolleeId,
+            phone,
+            email,
+            pharmacyid,
+            codetopharmacy,
+            false
+          );
         }
-
-        await getDeliveries(enrolleeId, phone, email, pharmacyid, showall);
       } catch (error) {
         toast.error(`Error fetching deliveries: ${error}`);
       } finally {
@@ -116,10 +140,10 @@ export default function DeliveriesPage() {
   useEffect(() => {
     // Initial load based on enrollee selection
     if (searchCriteria.enrolleeId) {
-      getDeliveriesWithFilters(searchCriteria.enrolleeId, "enrollee");
+      getDeliveriesWithFilters(searchCriteria.enrolleeId, "enrollee", false);
     } else {
       // Show all deliveries if no enrollee is selected
-      getDeliveriesWithFilters("", "enrollee");
+      getDeliveriesWithFilters("", "enrollee", true);
     }
 
     return () => {
@@ -131,13 +155,16 @@ export default function DeliveriesPage() {
 
   const handleSearch = (
     searchTerm: string,
-    searchType?: "enrollee" | "pharmacy" | "address"
+    searchType?: "enrollee" | "phone" | "email" | "pharmacy" | "code",
+    showAll?: boolean
   ) => {
     const finalSearchType = searchType || currentSearchType;
+    const finalShowAll = showAll !== undefined ? showAll : currentShowAll;
 
     setCurrentSearchTerm(searchTerm);
     setCurrentSearchType(finalSearchType);
-    getDeliveriesWithFilters(searchTerm, finalSearchType);
+    setCurrentShowAll(finalShowAll);
+    getDeliveriesWithFilters(searchTerm, finalSearchType, finalShowAll);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -267,6 +294,7 @@ export default function DeliveriesPage() {
           <DeliveryTable
             currentSearchTerm={currentSearchTerm}
             currentSearchType={currentSearchType}
+            currentShowAll={currentShowAll}
             deliveries={deliveries}
             isLoading={isLoading}
             onSearch={handleSearch}
