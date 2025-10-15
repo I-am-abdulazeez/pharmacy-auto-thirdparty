@@ -91,7 +91,7 @@ export const transformApiResponse = (
 
     // Enrollee information
     EnrolleeId: apiResponse.enrolleeid || "",
-    EnrolleeName: apiResponse.EnrolleeName || "",
+    EnrolleeName: apiResponse.email || "",
     EnrolleeEmail: apiResponse.email || "",
     EnrolleeAge: apiResponse.enrollee_age || 0,
 
@@ -153,4 +153,12 @@ export const createAttachmentFromFile = async (
     ContentType: file.type,
     Base64Data: base64Data,
   };
+};
+
+/**
+ * Generates a random 6-digit code
+ * @returns string - A 6-digit numeric code
+ */
+export const generateRandomCode = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
