@@ -264,7 +264,7 @@ export default function EnrolleeDataTable() {
                       <TableCell>
                         <Link
                           className="block w-full h-full text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
-                          to="/deliveries"
+                          to="/leadway/deliveries"
                         >
                           {getKeyValue(item, columnKey)}
                         </Link>
