@@ -5,18 +5,22 @@ import { useLocation } from "react-router-dom";
 import { ToggleIcon } from "@/components/icons";
 import SideNav from "@/components/ui/sidenav";
 
+interface DefaultLayoutProps {
+  children: React.ReactNode;
+  userType: "leadway" | "provider";
+}
+
 export default function DefaultLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  userType,
+}: DefaultLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
   return (
     <div className="flex h-screen overflow-hidden">
       <div className="hidden sm:block sm:w-[261px] h-screen border-r border-gray-200 bg-white">
-        <SideNav currentPath={location.pathname} />
+        <SideNav currentPath={location.pathname} userType={userType} />
       </div>
 
       <main className="flex flex-col flex-1 overflow-auto relative bg-gray-50">
@@ -53,6 +57,7 @@ export default function DefaultLayout({
       >
         <SideNav
           currentPath={location.pathname}
+          userType={userType}
           onClose={() => setIsMobileMenuOpen(false)}
         />
       </div>
