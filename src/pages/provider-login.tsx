@@ -48,7 +48,7 @@ export default function ProviderLoginPage() {
         isProvider: true,
       }));
       setApiError("");
-      navigate("/provider/deliveries");
+      navigate("/provider/pay-autoline");
 
       return;
     }
@@ -61,7 +61,7 @@ export default function ProviderLoginPage() {
 
       if (response.result) {
         setAuthState((prev) => ({ ...prev, isProvider: true }));
-        navigate("/provider/deliveries");
+        navigate("/provider/pay-autoline");
       } else {
         setApiError(response.ErrorMessage || "An error occurred during login");
       }
