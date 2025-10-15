@@ -91,7 +91,7 @@ export const transformApiResponse = (
 
     // Enrollee information
     EnrolleeId: apiResponse.enrolleeid || "",
-    EnrolleeName: apiResponse.email || "",
+    EnrolleeName: apiResponse.EnrolleeName || "",
     EnrolleeEmail: apiResponse.email || "",
     EnrolleeAge: apiResponse.enrollee_age || 0,
 
