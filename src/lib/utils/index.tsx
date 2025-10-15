@@ -10,18 +10,6 @@ export const safeGet = (value: any, fallback: any) => {
   return value !== undefined && value !== null ? value : fallback;
 };
 
-let navigateFunction: any = null;
-
-export const setNavigateFunction = (navigate: any) => {
-  navigateFunction = navigate;
-};
-
-export const programmaticNavigate = (path: string) => {
-  if (navigateFunction) {
-    navigateFunction(path);
-  }
-};
-
 export const formatDate = (date: string | Date | undefined | null): string => {
   if (!date) return "N/A";
 
