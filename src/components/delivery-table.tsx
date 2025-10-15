@@ -31,6 +31,7 @@ import { DeleteIcon, EditIcon } from "./icons";
 import { deliveryActions } from "@/lib/store/delivery-store";
 import { formatDate } from "@/lib/utils";
 import { deleteDelivery } from "@/lib/services/delivery-service";
+import { DELIVERY_COLUMNS } from "@/lib/constants";
 
 interface DeliveryTableProps {
   deliveries: Delivery[];
@@ -49,7 +50,6 @@ interface RowItem {
   enrolleeName: string;
   schemeType: string;
   enrolleeId: string;
-  email: string;
   inputtedDate: string;
   payDate: string;
   codeExpiryDate: string;
@@ -200,26 +200,6 @@ export default function DeliveryTable({
     return filteredRows.slice(startIndex, endIndex);
   }, [filteredRows, currentPage, pageSize]);
 
-  const columnsWithActions = useMemo(
-    () => [
-      { key: "enrolleeName", label: "Enrollee Name" },
-      { key: "schemeType", label: "Scheme Type" },
-      { key: "enrolleeId", label: "Enrollee ID" },
-      { key: "email", label: "Email" },
-      { key: "inputtedDate", label: "Input Date" },
-      { key: "payDate", label: "Pay Date" },
-      { key: "codeExpiryDate", label: "Code Expiry" },
-      { key: "diagnosisName", label: "Diagnosis" },
-      { key: "procedureName", label: "Procedure" },
-      { key: "dosageDescription", label: "Dosage" },
-      { key: "comment", label: "Comment" },
-      { key: "cost", label: "Cost" },
-      { key: "deliveryStatus", label: "Status" },
-      { key: "actions", label: "Actions" },
-    ],
-    []
-  );
-
   const renderCell = (item: RowItem, columnKey: Key): React.ReactNode => {
     switch (columnKey) {
       case "enrolleeName":
@@ -236,8 +216,6 @@ export default function DeliveryTable({
         );
       case "enrolleeId":
         return <span className="text-sm text-gray-700">{item.enrolleeId}</span>;
-      case "email":
-        return <span className="text-sm text-gray-600">{item.email}</span>;
       case "inputtedDate":
         return <span className="text-sm">{item.inputtedDate}</span>;
       case "payDate":
@@ -453,7 +431,7 @@ export default function DeliveryTable({
                 <div className="flex flex-col gap-1">
                   <h3 className="text-lg font-semibold">Deliveries</h3>
                   <p className="text-sm text-gray-600">
-                    Manage and track Pickup status
+                    Manage and track delivery status
                   </p>
                   <p className="text-xs text-gray-500">
                     Total: {filteredRows.length} deliveries
@@ -464,7 +442,7 @@ export default function DeliveryTable({
             </div>
           }
         >
-          <TableHeader columns={columnsWithActions}>
+          <TableHeader columns={DELIVERY_COLUMNS}>
             {(column) => (
               <TableColumn key={column.key}>{column.label}</TableColumn>
             )}
