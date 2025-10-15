@@ -61,7 +61,7 @@ export default function ProviderLoginPage() {
 
       if (response.result) {
         setAuthState((prev) => ({ ...prev, isProvider: true }));
-        navigate("/provider-deliveries");
+        navigate("/provider/deliveries");
       } else {
         setApiError(response.ErrorMessage || "An error occurred during login");
       }
