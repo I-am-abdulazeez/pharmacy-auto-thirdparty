@@ -9,12 +9,12 @@ import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/icons";
 import { loginProvider } from "@/lib/services/auth-service";
 import { BaseForm } from "@/types";
 import { authStore } from "@/lib/store/app-store";
-import { backdoorUser } from "@/lib/constants";
 import TextShowcase from "@/components/ui/text-showcase";
 import GridPattern from "@/components/ui/grid-pattern";
 import CardContainer from "@/components/ui/card-container";
 import ShineEffect from "@/components/effects/shine";
 import SlideEffect from "@/components/effects/slide";
+import { backdoorUser } from "@/lib/constants";
 
 export default function ProviderLoginPage() {
   const navigate = useNavigate();
@@ -38,14 +38,17 @@ export default function ProviderLoginPage() {
   const handleLogin = async () => {
     if (!isFormValid) return;
 
-    // Backdoor login check
     if (
       formData.email === "NobleZeez@admin.com" &&
       formData.password === "Password@!23"
     ) {
-      setAuthState((prev) => ({ ...prev, user: backdoorUser }));
+      setAuthState((prev) => ({
+        ...prev,
+        user: backdoorUser,
+        isProvider: true,
+      }));
       setApiError("");
-      navigate("/enrollees");
+      navigate("/provider/deliveries");
 
       return;
     }
@@ -57,7 +60,8 @@ export default function ProviderLoginPage() {
       const response = await loginProvider(formData);
 
       if (response.result) {
-        navigate("/enrollees");
+        setAuthState((prev) => ({ ...prev, isProvider: true }));
+        navigate("/provider-deliveries");
       } else {
         setApiError(response.ErrorMessage || "An error occurred during login");
       }
@@ -78,6 +82,9 @@ export default function ProviderLoginPage() {
         <CardContainer>
           <div className="mb-6">
             <TextShowcase showDescription={false} />
+            <p className="text-center text-sm text-gray-600 mt-2">
+              Provider Portal
+            </p>
           </div>
 
           {apiError && (
@@ -100,7 +107,7 @@ export default function ProviderLoginPage() {
                 isDisabled={isLoading}
                 isInvalid={isEmailInvalid}
                 label="Email"
-                placeholder="Enter your email (e.g. user@leadway.com)"
+                placeholder="Enter your email (e.g. provider@example.com)"
                 radius="sm"
                 size="lg"
                 value={formData.email}
@@ -108,7 +115,6 @@ export default function ProviderLoginPage() {
                   setFormData({ ...formData, email: e.target.value })
                 }
               />
-              {/* Input focus indicator */}
               <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#F15A24] transition-all duration-300 group-focus-within:w-full" />
             </div>
           </div>
@@ -146,7 +152,6 @@ export default function ProviderLoginPage() {
                   setFormData({ ...formData, password: e.target.value })
                 }
               />
-              {/* Input focus indicator */}
               <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#F15A24] transition-all duration-300 group-focus-within:w-full" />
             </div>
           </div>
