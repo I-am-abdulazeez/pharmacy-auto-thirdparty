@@ -148,7 +148,7 @@ export default function PayAutoLinePage() {
             radius="sm"
             onPress={handleSearch}
           >
-            Search
+            View
           </Button>
 
           {(enrolleeId || codeToPharmacy) && (
