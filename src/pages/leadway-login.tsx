@@ -60,10 +60,29 @@ export default function LeadwayLoginPage() {
     try {
       const response = await loginLeadway(formData);
 
-      if (response.result) {
+      if (
+        response.status === 200 &&
+        response.result &&
+        response.result.length > 0
+      ) {
+        const user = response.result[0];
+
+        setAuthState((prev) => ({
+          ...prev,
+          user: user,
+          isLeadway: true,
+        }));
+
+        setApiError("");
+
         navigate("/leadway/pharmacy");
       } else {
-        setApiError(response.ErrorMessage || "An error occurred during login");
+        const errorMsg =
+          response.status !== 200
+            ? response.ErrorMessage || "An error occurred during login"
+            : "No user data received";
+
+        setApiError(errorMsg);
       }
     } catch (error) {
       setApiError(
