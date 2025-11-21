@@ -1,8 +1,8 @@
 import toast from "react-hot-toast";
 
 import { API_URL, createAttachmentFromFile } from "../utils";
-import { appChunk, authStore } from "../store/app-store";
-import { deliveryFormState } from "../store/delivery-store";
+import { authStore } from "../store/app-store";
+// import { deliveryFormState } from "../store/delivery-store";
 
 export type EmailPayload = {
   EmailAddress: string;
@@ -305,7 +305,7 @@ export const getPharmacyDeliveryEmailTemplate = (templateData: EmailTemplateData
 
 export const sendEmailAlert = async (templateData: EmailTemplateData, attachmentFile?: File | null) => {
   const { user } = authStore.get();
-  const { enrolleeData } = appChunk.get();
+  // const { enrolleeData } = appChunk.get();
 
   try {
     let attachments: Attachment[] | null = null;
@@ -321,10 +321,10 @@ export const sendEmailAlert = async (templateData: EmailTemplateData, attachment
     }
 
     const emailPayload: EmailPayload = {
-      EmailAddress: String(enrolleeData?.Member_Email),
-      CC: `Pharmacybenefitmgt@leadway.com`,
+      EmailAddress: "Pharmacybenefitmgt@leadway.com",
+      CC: "",
       BCC: "",
-      Subject: `Pharmacy Delivery Request - ${templateData.enrolleeName} (ID: ${templateData.enrolleeId})`,
+      Subject: `Pharmacy Pickup Request - ${templateData.enrolleeName} (ID: ${templateData.enrolleeId})`,
       MessageBody: getEmailTemplate(templateData),
       Attachments: attachments,
       Category: "PHARMACY_DELIVERY",
@@ -363,7 +363,7 @@ export const sendEmailAlert = async (templateData: EmailTemplateData, attachment
 };
 
 export const sendPhaEmailAlert = async (templateData: EmailTemplateData, attachmentFile?: File | null) => {
-  const { enrolleeEmail } = deliveryFormState.get();
+  // const { enrolleeEmail } = deliveryFormState.get();
 
   try {
     let attachments: Attachment[] | null = null;
@@ -379,10 +379,10 @@ export const sendPhaEmailAlert = async (templateData: EmailTemplateData, attachm
     }
 
     const emailPayload: EmailPayload = {
-      EmailAddress: enrolleeEmail,
-      CC: "Pharmacybenefitmgt@leadway.com",
+      EmailAddress: "Pharmacybenefitmgt@leadway.com",
+      CC: "",
       BCC: "",
-      Subject: `🏥 Pharmacy Delivery - ${templateData.enrolleeName} (${templateData.enrolleeId})`,
+      Subject: `Pharmacy Pickup - ${templateData.enrolleeName} (${templateData.enrolleeId})`,
       MessageBody: getPharmacyDeliveryEmailTemplate(templateData),
       Attachments: attachments,
       Category: "PHARMACY_DELIVERY",
