@@ -66,6 +66,7 @@ interface RowItem {
   dosageDescription: string;
   comment: string;
   cost: string;
+  codetopharmacy: string;
   diagnosisName: string;
   procedureName: string;
   deliveryStatus: string;
@@ -208,6 +209,7 @@ export default function DeliveryTable({
           email: delivery.email || delivery.EnrolleeEmail || "N/A",
           inputtedDate: formatDate(delivery.inputteddate) || "N/A",
           payDate: delivery.paydate ? formatDate(delivery.paydate) : "Not Paid",
+          codetopharmacy: delivery.codetopharmacy || "",
           codeExpiryDate: formatDate(delivery.codeexpirydate) || "N/A",
           dosageDescription: delivery.DosageDescription || "N/A",
           comment: delivery.Comment || "N/A",
@@ -264,6 +266,8 @@ export default function DeliveryTable({
         );
       case "codeExpiryDate":
         return <span className="text-sm">{item.codeExpiryDate}</span>;
+      case "codetopharmacy":
+        return <span className="text-sm">{item.codetopharmacy}</span>;
       case "diagnosisName":
         return <span className="text-sm">{item.diagnosisName}</span>;
       case "procedureName":
