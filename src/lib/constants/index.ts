@@ -56,6 +56,7 @@ export const DELIVERY_COLUMNS = [
   { key: "enrolleeId", label: "Enrollee ID" },
   { key: "inputtedDate", label: "Input Date" },
   { key: "codeExpiryDate", label: "Code Expiry" },
+  { key: "codetopharmacy", label: "Code" },
   { key: "diagnosisName", label: "Diagnosis" },
   { key: "procedureName", label: "Procedure" },
   { key: "dosageDescription", label: "Dosage" },
