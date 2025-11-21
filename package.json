@@ -1,7 +1,7 @@
 {
-  "name": "vite-template",
+  "name": "pharmacy-auto-thirdparty",
   "private": true,
-  "version": "0.7.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
