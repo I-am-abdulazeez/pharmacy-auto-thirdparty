@@ -149,7 +149,7 @@ export const getEmailTemplate = (templateData: EmailTemplateData): string => {
 };
 
 export const getPharmacyDeliveryEmailTemplate = (templateData: EmailTemplateData): string => {
-  const { enrolleeName, deliveryAddress } = templateData;
+  const { enrolleeName } = templateData;
 
   return `
     <!DOCTYPE html>
@@ -256,7 +256,7 @@ export const getPharmacyDeliveryEmailTemplate = (templateData: EmailTemplateData
     <body>
       <div class="container">
         <div class="header">
-          <h1>🏥 Pharmacy Pickup Code</h1>
+          <h1>Pharmacy Pickup Code</h1>
         </div>
 
         <div class="content">
@@ -268,13 +268,8 @@ export const getPharmacyDeliveryEmailTemplate = (templateData: EmailTemplateData
             Your medication is ready for pickup. Please use the code below to collect your prescription from the pharmacy.
           </p>
 
-          <div class="code-box">
-            <div class="code-label">Your Pickup Code</div>
-            <div class="code-value">${deliveryAddress || "N/A"}</div>
-          </div>
-
           <div class="instructions">
-            <p><strong>📋 Instructions:</strong></p>
+            <p><strong>Instructions:</strong></p>
             <p>• Present this code at the pharmacy counter</p>
             <p>• Have a valid ID ready for verification</p>
             <p>• Contact us if you have any questions</p>
