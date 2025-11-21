@@ -180,20 +180,20 @@ export const DeliveryIcon = (props: IconSvgProps) => (
 
 export const PayAutoLineIcon = (props: IconSvgProps) => (
   <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
     fill="currentColor"
+    height="24"
     viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
     <path
       className="b"
       d="m5,2h-3v2h2v16c0,1.1.9,2,2,2h12c1.1,0,2-.9,2-2V4h2v-2H5Zm13,18H6V4h12v16Z"
-    ></path>
-    <path className="b" d="M14 13H16V18H14z"></path>
-    <path className="b" d="M8 13H11V18H8z"></path>
-    <path className="b" d="M14 6H16V11H14z"></path>
+    />
+    <path className="b" d="M14 13H16V18H14z" />
+    <path className="b" d="M8 13H11V18H8z" />
+    <path className="b" d="M14 6H16V11H14z" />
   </svg>
 );
 
@@ -207,5 +207,23 @@ export const ToggleIcon = (props: IconSvgProps) => (
     {...props}
   >
     <path d="M4 6h16v2H4zM4 11h16v2H4zM4 16h16v2H4z" />
+  </svg>
+);
+
+export const UploadIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    className="mx-auto h-12 w-12 text-gray-400"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 48 48"
+    {...props}
+  >
+    <path
+      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
   </svg>
 );
