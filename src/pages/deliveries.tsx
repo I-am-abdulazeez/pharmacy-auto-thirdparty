@@ -24,7 +24,7 @@ import {
 } from "@/lib/services/enrollee-service";
 import { getDeliveries } from "@/lib/services/delivery-service";
 import EnrolleeSelectionStep from "@/components/enrollee-setup";
-import ProviderSetup from "@/components/deliveries/provider-setup";
+// import ProviderSetup from "@/components/deliveries/provider-setup";
 import DiagnosisProcedureStep from "@/components/deliveries/procedure-setup";
 import AdditionalInfoStep from "@/components/deliveries/additional-setup";
 import ProgressStep from "@/components/deliveries/progress-step";
@@ -208,11 +208,11 @@ export default function DeliveriesPage() {
     switch (formState.currentStep) {
       case 1:
         return <EnrolleeSelectionStep />;
+      // case 2:
+      //   return <ProviderSetup />;
       case 2:
-        return <ProviderSetup />;
-      case 3:
         return <DiagnosisProcedureStep />;
-      case 4:
+      case 3:
         return <AdditionalInfoStep />;
       default:
         return null;
