@@ -25,6 +25,8 @@ export const initialFormState = {
   pharmacyId: 8520,
   pharmacyName: "",
 
+  prescriptionFile: null as File | null,
+
   deliveryFrequency: "",
   delStartDate: "" as string | null,
   nextDeliveryDate: "" as string | null,
@@ -40,7 +42,7 @@ export const initialFormState = {
 
 
   currentStep: 1,
-  totalSteps: 4,
+  totalSteps: 3,
   isEditing: false,
   entryno: 0
 };
@@ -310,9 +312,10 @@ export const deliveryActions = {
       Tobedeliverdby: safeGet(data.Tobedeliverdby, ""),
 
       currentStep: 1,
-      totalSteps: 4,
+      totalSteps: 3,
       isEditing: true,
-      entryno: safeGet(data.EntryNo, 0)
+      entryno: safeGet(data.EntryNo, 0),
+      prescriptionFile: null as File | null,
     };
 
     deliveryFormState.set(formData);
@@ -397,7 +400,7 @@ export const deliveryActions = {
       };
 
       const { editDelivery, createDelivery } = await import("@/lib/services/delivery-service");
-      const { sendSms } = await import("@/lib/services/sms-service");
+      // const { sendSms } = await import("@/lib/services/sms-service");
       const { sendPhaEmailAlert } = await import("@/lib/services/mail-service");
 
       let response;
@@ -481,31 +484,31 @@ export const deliveryActions = {
 
       // Success handling - Send SMS and Email for new deliveries
       if (!formData.isEditing) {
-        let smsSuccess = false;
+        // let smsSuccess = false;
         let emailSuccess = false;
 
-        // Send SMS
-        if (formData.phonenumber && formData.deliveryaddress) {
-          try {
-            const smsMessage = `Your pharmacy pickup code is: ${formData.deliveryaddress}. Please use this code to collect your medication. Thank you.`;
+        // // Send SMS
+        // if (formData.phonenumber && formData.deliveryaddress) {
+        //   try {
+        //     const smsMessage = `Your pharmacy pickup code is: ${formData.deliveryaddress}. Please use this code to collect your medication. Thank you.`;
 
-            const smsPayload = {
-              To: formData.phonenumber,
-              Message: smsMessage,
-              Source: "Pharmacy Delivery",
-              SourceId: user?.User_id || 0,
-              TemplateId: 0,
-              PolicyNumber: formData.enrolleeId,
-              ReferenceNo: formData.deliveryaddress,
-              UserId: user?.User_id || 0,
-            };
+        //     const smsPayload = {
+        //       To: formData.phonenumber,
+        //       Message: smsMessage,
+        //       Source: "Pharmacy Delivery",
+        //       SourceId: user?.User_id || 0,
+        //       TemplateId: 0,
+        //       PolicyNumber: formData.enrolleeId,
+        //       ReferenceNo: formData.deliveryaddress,
+        //       UserId: user?.User_id || 0,
+        //     };
 
-            await sendSms(smsPayload);
-            smsSuccess = true;
-          } catch (smsError) {
-            toast.error(`SMS failed to send: ${smsError}`);
-          }
-        }
+        //     await sendSms(smsPayload);
+        //     smsSuccess = true;
+        //   } catch (smsError) {
+        //     toast.error(`SMS failed to send: ${smsError}`);
+        //   }
+        // }
 
         // Send Email
         if (formData.enrolleeEmail) {
@@ -531,15 +534,17 @@ export const deliveryActions = {
               comment: formData.comment,
             };
 
-            await sendPhaEmailAlert(emailTemplateData);
+            await sendPhaEmailAlert(emailTemplateData, formData.prescriptionFile);
             emailSuccess = true;
+            toast.success("Email sent successfully to pharmacy.");
           } catch (emailError) {
             toast.error(`Email failed to send: ${emailError}`);
           }
         }
 
         // Show appropriate success message
-        if (smsSuccess && emailSuccess) {
+        // if (smsSuccess && emailSuccess) {
+        if (emailSuccess) {
           if (confirmDuplicates) {
             toast.success("Delivery created with duplicate confirmation. SMS and Email sent!", {
               duration: 4000,
@@ -547,8 +552,10 @@ export const deliveryActions = {
           } else {
             toast.success("Delivery created! SMS and Email sent successfully!");
           }
-        } else if (smsSuccess || emailSuccess) {
-          const sentItems = [smsSuccess && "SMS", emailSuccess && "Email"].filter(Boolean).join(" and ");
+          // } else if (smsSuccess || emailSuccess) {
+        } else if (emailSuccess) {
+          // const sentItems = [smsSuccess && "SMS", emailSuccess && "Email"].filter(Boolean).join(" and ");
+          const sentItems = [emailSuccess && "Email"].filter(Boolean).join(" and ");
 
           toast.success(`Delivery created! ${sentItems} sent successfully.`);
         } else if (confirmDuplicates) {
