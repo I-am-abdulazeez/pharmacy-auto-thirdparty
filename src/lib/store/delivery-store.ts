@@ -362,7 +362,7 @@ export const deliveryActions = {
         Comment: formData.comment,
         IsDelivered: false,
         Username: user?.UserName || "",
-        deliveryaddress: formData.deliveryaddress,
+        deliveryaddress: "",
         phonenumber: formData.phonenumber,
         Pharmacyid: formData.pharmacyId,
         PharmacyName: formData.pharmacyName,
