@@ -15,6 +15,36 @@ export const DeleteIcon = (props: IconSvgProps) => {
   );
 };
 
+export const DownloadIcon = (props: IconSvgProps) => (
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    {...props}
+  >
+    <path
+      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
+  </svg>
+);
+
+export const PendingIcon = (props: IconSvgProps) => (
+  <svg
+    fill="currentColor"
+    height="24"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path d="M12 2C8.02 2 4 3.37 4 6v12c0 2.63 4.02 4 8 4s8-1.37 8-4V6c0-2.63-4.02-4-8-4m0 18c-3.72 0-6-1.29-6-2v-1.27c1.54.84 3.78 1.27 6 1.27s4.46-.43 6-1.27V18c0 .71-2.28 2-6 2m0-4c-3.72 0-6-1.29-6-2v-1.27c1.54.84 3.78 1.27 6 1.27s4.46-.43 6-1.27V14c0 .71-2.28 2-6 2m0-4c-3.72 0-6-1.29-6-2V8.73C7.54 9.57 9.78 10 12 10s4.46-.43 6-1.27V10c0 .71-2.28 2-6 2m0-4C8.28 8 6 6.71 6 6s2.28-2 6-2 6 1.29 6 2-2.28 2-6 2" />
+  </svg>
+);
+
 export const ArrowRightIcon = (props: IconSvgProps) => {
   return (
     <svg
