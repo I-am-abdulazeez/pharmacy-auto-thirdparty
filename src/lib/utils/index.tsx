@@ -150,3 +150,238 @@ export const createAttachmentFromFile = async (
 export const generateRandomCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
+
+export const downloadTableAsPDF = (
+  deliveries: Delivery[],
+  showAll: boolean
+) => {
+  // Create HTML content for PDF
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Pending Collections Report</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 20px;
+          color: #333;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+          border-bottom: 3px solid #f15a24;
+          padding-bottom: 20px;
+        }
+        .header h1 {
+          color: #c61531;
+          margin: 0;
+          font-size: 28px;
+        }
+        .header p {
+          margin: 5px 0;
+          color: #666;
+        }
+        .info-box {
+          background-color: #f8f9fa;
+          padding: 15px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+          border-left: 4px solid #f15a24;
+        }
+        .info-box p {
+          margin: 5px 0;
+          font-size: 14px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+        th {
+          background-color: #f15a24;
+          color: white;
+          padding: 12px;
+          text-align: left;
+          font-size: 12px;
+          font-weight: 600;
+        }
+        td {
+          padding: 10px 12px;
+          border-bottom: 1px solid #e0e0e0;
+          font-size: 11px;
+        }
+        tr:hover {
+          background-color: #f5f5f5;
+        }
+        .status-badge {
+          padding: 4px 8px;
+          border-radius: 12px;
+          font-size: 10px;
+          font-weight: 600;
+          display: inline-block;
+        }
+        .status-paid {
+          background-color: #d4edda;
+          color: #155724;
+        }
+        .status-pending {
+          background-color: #fff3cd;
+          color: #856404;
+        }
+        .scheme-chip {
+          background-color: #fff8e1;
+          color: #f57c00;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+        }
+        .quantity-badge {
+          background-color: #e3f2fd;
+          color: #1565c0;
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-weight: 600;
+          text-align: center;
+        }
+        .footer {
+          margin-top: 30px;
+          text-align: center;
+          font-size: 10px;
+          color: #999;
+          border-top: 1px solid #e0e0e0;
+          padding-top: 15px;
+        }
+        .summary {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #f8f9fa;
+          border-radius: 8px;
+        }
+        .summary-item {
+          text-align: center;
+        }
+        .summary-item .value {
+          font-size: 24px;
+          font-weight: bold;
+          color: #c61531;
+        }
+        .summary-item .label {
+          font-size: 12px;
+          color: #666;
+          margin-top: 5px;
+        }
+        @media print {
+          body {
+            padding: 10px;
+          }
+          .header {
+            page-break-after: avoid;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Pharmacy Collections Report</h1>
+        <p>Generated on ${new Date().toLocaleString()}</p>
+      </div>
+
+      <div class="info-box">
+        <p><strong>Report Type:</strong> ${showAll ? "All Pickups (Including Previous)" : "Pending Pickups Only"}</p>
+        <p><strong>Total Records:</strong> ${deliveries.length}</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Entry No.</th>
+            <th>Enrollee Name</th>
+            <th>Procedure</th>
+            <th>Quantity</th>
+            <th>Phone Number</th>
+            <th>Cost</th>
+            <th>Scheme</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${deliveries
+            .map((delivery) => {
+              const procedureName =
+                delivery.ProcedureLines?.[0]?.ProcedureName || "N/A";
+              const procedureQuantity =
+                delivery.ProcedureLines?.[0]?.ProcedureQuantity || 0;
+              const cost =
+                delivery.cost || delivery.ProcedureLines?.[0]?.cost || "N/A";
+
+              return `
+                  <tr>
+                    <td>${delivery.EntryNo}</td>
+                    <td><strong>${delivery.EnrolleeName || "N/A"}</strong></td>
+                    <td>${procedureName}</td>
+                    <td><span class="quantity-badge">${procedureQuantity}</span></td>
+                    <td>${delivery.phonenumber || "N/A"}</td>
+                    <td>${cost && cost !== "N/A" ? `₦${cost}` : "N/A"}</td>
+                    <td><span class="scheme-chip">${delivery.scheme_type || "N/A"}</span></td>
+                    <td>
+                      <span class="status-badge ${delivery.ispaid ? "status-paid" : "status-pending"}">
+                        ${delivery.ispaid ? "Paid" : "Pending"}
+                      </span>
+                    </td>
+                  </tr>
+                `;
+            })
+            .join("")}
+        </tbody>
+      </table>
+
+      <div class="summary">
+        <div class="summary-item">
+          <div class="value">${deliveries.length}</div>
+          <div class="label">Total Deliveries</div>
+        </div>
+        <div class="summary-item">
+          <div class="value">${deliveries.filter((d) => !d.ispaid).length}</div>
+          <div class="label">Pending</div>
+        </div>
+        <div class="summary-item">
+          <div class="value">${deliveries.filter((d) => d.ispaid).length}</div>
+          <div class="label">Paid</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>This report was automatically generated by the Pharmacy Delivery System.</p>
+        <p>© ${new Date().getFullYear()} Pharmacy Management System. All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  // Create a Blob from the HTML content
+  const blob = new Blob([htmlContent], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+
+  // Create a temporary iframe to print
+  const iframe = document.createElement("iframe");
+
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
+
+  iframe.onload = () => {
+    iframe.contentWindow?.print();
+
+    // Clean up after a delay
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      URL.revokeObjectURL(url);
+    }, 1000);
+  };
+
+  iframe.src = url;
+};
