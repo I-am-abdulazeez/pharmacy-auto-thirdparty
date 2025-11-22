@@ -142,14 +142,14 @@ export default function DeliveriesPage() {
       deliveryActions.openModal();
 
       // Auto-generate delivery code for new deliveries
-      if (!formState.isEditing) {
-        const generateRandomCode = () => {
-          return Math.floor(100000 + Math.random() * 900000).toString();
-        };
-        const generatedCode = generateRandomCode();
+      // if (!formState.isEditing) {
+      //   const generateRandomCode = () => {
+      //     return Math.floor(100000 + Math.random() * 900000).toString();
+      //   };
+      //   const generatedCode = generateRandomCode();
 
-        deliveryActions.updateFormField("deliveryaddress", generatedCode);
-      }
+      //   deliveryActions.updateFormField("deliveryaddress", generatedCode);
+      // }
     } else {
       deliveryActions.closeModal();
       if (!formState.isEditing) {
