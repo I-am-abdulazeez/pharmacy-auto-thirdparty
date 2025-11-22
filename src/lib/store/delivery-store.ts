@@ -410,7 +410,7 @@ export const deliveryActions = {
       } else {
         const formattedData = {
           Deliveries: [delivery],
-          ConfirmDuplicates: confirmDuplicates
+          ConfirmDuplicates: true
         };
         const shouldSkipNavigation = !confirmDuplicates;
 
