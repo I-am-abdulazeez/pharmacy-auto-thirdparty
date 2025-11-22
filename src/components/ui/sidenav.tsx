@@ -6,6 +6,7 @@ import {
   EnrolleeIcon,
   DeliveryIcon,
   PayAutoLineIcon,
+  PendingIcon,
 } from "@/components/icons";
 
 interface SideNavProps {
@@ -37,6 +38,11 @@ const providerLinks = [
     name: "Pay AutoLine",
     path: "/provider/pay-autoline",
     icon: PayAutoLineIcon,
+  },
+  {
+    name: "Pending Collections",
+    path: "/provider/pending-collections",
+    icon: PendingIcon,
   },
 ];
 
@@ -113,7 +119,7 @@ export default function SideNav({
 
               {/* Label */}
               <span
-                className={`font-medium transition-colors duration-300 ${
+                className={`font-medium transition-colors duration-300 text-sm ${
                   isActive ? "font-semibold" : "group-hover:text-[#F15A24]"
                 }`}
               >
