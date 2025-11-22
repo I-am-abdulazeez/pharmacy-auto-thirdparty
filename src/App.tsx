@@ -6,7 +6,8 @@ import ProviderLoginPage from "@/pages/provider-login";
 import PharmacyPage from "@/pages/pharmacy";
 import EnrolleesPage from "@/pages/enrollees";
 import DeliveriesPage from "@/pages/deliveries";
-import PayAutoLinePage from "@/pages/pay-autoline";
+import PayAutoLinePage from "@/pages/providers/pay-autoline";
+import PendingCollections from "@/pages/providers/pending-collections";
 import ProtectedLeadwayRoute from "@/components/shared/protected-leadway";
 import ProtectedProviderRoute from "@/components/shared/protected-provider";
 
@@ -24,6 +25,7 @@ function App() {
       </Route>
       <Route element={<ProtectedProviderRoute />} path="/provider/">
         <Route element={<PayAutoLinePage />} path="pay-autoline" />
+        <Route element={<PendingCollections />} path="pending-collections" />
       </Route>
     </Routes>
   );
