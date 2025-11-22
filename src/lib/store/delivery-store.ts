@@ -22,7 +22,7 @@ export const initialFormState = {
   cost: "",
   Tobedeliverdby: "",
 
-  pharmacyId: 8520,
+  pharmacyId: 9999,
   pharmacyName: "",
 
   prescriptionFile: null as File | null,
