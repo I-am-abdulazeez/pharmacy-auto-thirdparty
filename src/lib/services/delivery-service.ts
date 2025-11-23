@@ -282,3 +282,29 @@ export const deleteDelivery = async (
     setIsDeleting((prev) => ({ ...prev, [delivery.key]: false }));
   }
 };
+
+export const restoreDelivery = async (data: {
+  entryno: number;
+  Restoredby: string;
+}) => {
+  try {
+    const response = await fetch(`${API_URL}/Pharmacy/RestoreDateexpiryAutopaymentRequest`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    if (result.status === 200 && result.result?.[0]?.RowsAffected === 1) {
+      return result;
+    } else {
+      throw new Error("Failed to restore delivery code");
+    }
+  } catch (error) {
+    toast.error(`Restore delivery error: ${error}`);
+    throw error;
+  }
+};
