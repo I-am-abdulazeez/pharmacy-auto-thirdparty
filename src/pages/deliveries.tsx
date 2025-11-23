@@ -73,10 +73,14 @@ export default function DeliveriesPage() {
   const isFetchingRef = useRef<boolean>(false);
 
   const getDeliveriesWithFilters = useCallback(
-    async (filters: SearchFilters) => {
+    async (filters: SearchFilters, forceRefresh = false) => {
       const searchKey = JSON.stringify(filters);
 
-      if (lastSearchRef.current === searchKey || isFetchingRef.current) {
+      // Skip duplicate check if forceRefresh is true
+      if (
+        !forceRefresh &&
+        (lastSearchRef.current === searchKey || isFetchingRef.current)
+      ) {
         return;
       }
 
@@ -136,6 +140,10 @@ export default function DeliveriesPage() {
     setCurrentFilters(filters);
     getDeliveriesWithFilters(filters);
   };
+
+  const handleRefresh = useCallback(() => {
+    getDeliveriesWithFilters(currentFilters, true);
+  }, [currentFilters, getDeliveriesWithFilters]);
 
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
@@ -265,6 +273,7 @@ export default function DeliveriesPage() {
             currentFilters={currentFilters}
             deliveries={deliveries}
             isLoading={isLoading}
+            onRefresh={handleRefresh}
             onSearch={handleSearch}
           />
         )}
