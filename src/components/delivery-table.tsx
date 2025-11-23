@@ -26,12 +26,16 @@ import { Checkbox } from "@heroui/checkbox";
 import { Key } from "@react-types/shared";
 import toast from "react-hot-toast";
 
-import { DeleteIcon, EditIcon } from "./icons";
+import { DeleteIcon, EditIcon, RestoreIcon } from "./icons";
 
 import { deliveryActions } from "@/lib/store/delivery-store";
 import { formatDate } from "@/lib/utils";
-import { deleteDelivery } from "@/lib/services/delivery-service";
+import {
+  deleteDelivery,
+  restoreDelivery,
+} from "@/lib/services/delivery-service";
 import { DELIVERY_COLUMNS } from "@/lib/constants";
+import { authStore } from "@/lib/store/app-store";
 
 interface DeliveryTableProps {
   deliveries: Delivery[];
@@ -44,6 +48,7 @@ interface DeliveryTableProps {
     code: string;
     showAll: boolean;
   }) => void;
+  onRefresh?: () => void;
   currentFilters?: {
     enrollee: string;
     phone: string;
@@ -80,6 +85,7 @@ export default function DeliveryTable({
   deliveries,
   isLoading = false,
   onSearch,
+  onRefresh,
   currentFilters = {
     enrollee: "",
     phone: "",
@@ -91,6 +97,7 @@ export default function DeliveryTable({
 }: DeliveryTableProps) {
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
   const [isEditing, setIsEditing] = useState<Record<string, boolean>>({});
+  const [isRestoring, setIsRestoring] = useState<Record<string, boolean>>({});
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     delivery: any | null;
@@ -107,6 +114,36 @@ export default function DeliveryTable({
 
   const handleDeleteClick = (delivery: any) => {
     setDeleteConfirmation({ isOpen: true, delivery });
+  };
+
+  const handleRestore = async (delivery: any) => {
+    try {
+      const { user } = authStore.get();
+
+      if (!user) {
+        toast.error("User not authenticated");
+
+        return;
+      }
+      setIsRestoring((prev) => ({ ...prev, [delivery.key]: true }));
+      await restoreDelivery({
+        entryno: delivery.original.EntryNo,
+        Restoredby: user.UserName,
+      });
+
+      toast.success("Code restored successfully");
+
+      // Refresh the table data
+      if (onRefresh) {
+        onRefresh();
+      } else if (onSearch) {
+        onSearch(filters);
+      }
+    } catch (error) {
+      toast.error(`Failed to restore code: ${(error as Error).message}`);
+    } finally {
+      setIsRestoring((prev) => ({ ...prev, [delivery.key]: false }));
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -201,6 +238,21 @@ export default function DeliveryTable({
       deliveries.map((delivery, index) => {
         const uniqueKey = `${delivery.EntryNo || index}-${Date.now()}-${Math.random()}`;
 
+        // Determine delivery status
+        let deliveryStatus = "Pending";
+
+        if (delivery.IsDelivered) {
+          deliveryStatus = "Picked up";
+        } else if (!delivery.IsDelivered && delivery.codeexpirydate) {
+          const expiryDate = new Date(delivery.codeexpirydate);
+          const today = new Date();
+
+          today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+          if (expiryDate < today) {
+            deliveryStatus = "Code Expired";
+          }
+        }
+
         return {
           key: uniqueKey,
           enrolleeName: delivery.EnrolleeName || "N/A",
@@ -216,7 +268,7 @@ export default function DeliveryTable({
           cost: delivery.cost || "N/A",
           diagnosisName: delivery.DiagnosisLines?.[0]?.DiagnosisName || "N/A",
           procedureName: delivery.ProcedureLines?.[0]?.ProcedureName || "N/A",
-          deliveryStatus: delivery.IsDelivered ? "Picked up" : "Pending",
+          deliveryStatus,
           actions: {
             isDelivered: delivery.IsDelivered ?? false,
           },
@@ -285,28 +337,46 @@ export default function DeliveryTable({
           <span className="text-sm font-medium">{item.cost || "N/A"}</span>
         );
       case "deliveryStatus":
-        return (
-          <Badge
-            color={item.deliveryStatus === "Picked up" ? "success" : "warning"}
-          >
-            {item.deliveryStatus}
-          </Badge>
-        );
+        const getBadgeColor = () => {
+          if (item.deliveryStatus === "Picked up") return "success";
+          if (item.deliveryStatus === "Code Expired") return "danger";
+
+          return "warning";
+        };
+
+        return <Badge color={getBadgeColor()}>{item.deliveryStatus}</Badge>;
       case "actions":
+        const isCodeExpired = item.deliveryStatus === "Code Expired";
+
         return (
           <div className="flex gap-2">
-            <Button
-              isIconOnly
-              aria-label={`Edit delivery for ${item.enrolleeName}`}
-              color="default"
-              isDisabled={item.actions.isDelivered || isEditing[item.key]}
-              isLoading={isEditing[item.key]}
-              size="sm"
-              variant="flat"
-              onPress={() => handleEdit(item)}
-            >
-              {isEditing[item.key] ? null : <EditIcon size={14} />}
-            </Button>
+            {isCodeExpired ? (
+              <Button
+                isIconOnly
+                aria-label={`Restore code for ${item.enrolleeName}`}
+                color="success"
+                isDisabled={isRestoring[item.key]}
+                isLoading={isRestoring[item.key]}
+                size="sm"
+                variant="flat"
+                onPress={() => handleRestore(item)}
+              >
+                {isRestoring[item.key] ? null : <RestoreIcon size={14} />}
+              </Button>
+            ) : (
+              <Button
+                isIconOnly
+                aria-label={`Edit delivery for ${item.enrolleeName}`}
+                color="default"
+                isDisabled={item.actions.isDelivered || isEditing[item.key]}
+                isLoading={isEditing[item.key]}
+                size="sm"
+                variant="flat"
+                onPress={() => handleEdit(item)}
+              >
+                {isEditing[item.key] ? null : <EditIcon size={14} />}
+              </Button>
+            )}
             <Button
               isIconOnly
               aria-label={`Delete delivery for ${item.enrolleeName}`}
