@@ -22,9 +22,7 @@ export default function DiagnosisProcedureStep() {
   const [isOpen, setIsOpen] = useState(false);
   const [, setSelectedDiagnosis] = useState<Diagnosis | null>(null);
 
-  const [originalCosts, setOriginalCosts] = useState<Map<string, string>>(
-    new Map()
-  );
+  const [, setOriginalCosts] = useState<Map<string, string>>(new Map());
 
   // Procedure search states
   const [inputValue, setInputValue] = useState("");
@@ -141,37 +139,37 @@ export default function DiagnosisProcedureStep() {
     }
   };
 
-  const getUnitCost = (procedure: any) => {
-    if (
-      procedure.cost === "" ||
-      procedure.cost === null ||
-      procedure.cost === undefined
-    ) {
-      // Show original unit cost if current cost is empty (unmodified)
-      return originalCosts.get(procedure.ProcedureId) || "0";
-    }
-    // If cost has been modified, treat it as unit cost
+  // const getUnitCost = (procedure: any) => {
+  //   if (
+  //     procedure.cost === "" ||
+  //     procedure.cost === null ||
+  //     procedure.cost === undefined
+  //   ) {
+  //     // Show original unit cost if current cost is empty (unmodified)
+  //     return originalCosts.get(procedure.ProcedureId) || "0";
+  //   }
+  //   // If cost has been modified, treat it as unit cost
 
-    return procedure.cost;
-  };
+  //   return procedure.cost;
+  // };
 
   // Helper function to get total cost for display
-  const getTotalCost = (procedure: any) => {
-    const unitCost = getUnitCost(procedure);
+  // const getTotalCost = (procedure: any) => {
+  //   const unitCost = getUnitCost(procedure);
 
-    return Math.round(parseFloat(unitCost) * procedure.ProcedureQuantity);
-  };
+  //   return Math.round(parseFloat(unitCost) * procedure.ProcedureQuantity);
+  // };
 
   // Handle unit cost change
-  const handleUnitCostChange = (procedureId: string, newUnitCost: string) => {
-    const originalCost = originalCosts.get(procedureId) || "0";
+  // const handleUnitCostChange = (procedureId: string, newUnitCost: string) => {
+  //   const originalCost = originalCosts.get(procedureId) || "0";
 
-    // If the new value equals original cost, store empty string to indicate unmodified
-    // Otherwise, store the actual new value
-    const costToSave = newUnitCost === originalCost ? "" : newUnitCost;
+  //   // If the new value equals original cost, store empty string to indicate unmodified
+  //   // Otherwise, store the actual new value
+  //   const costToSave = newUnitCost === originalCost ? "" : newUnitCost;
 
-    deliveryActions.updateProcedureCost(procedureId, costToSave);
-  };
+  //   deliveryActions.updateProcedureCost(procedureId, costToSave);
+  // };
 
   return (
     <div className="space-y-6">
@@ -336,8 +334,8 @@ export default function DiagnosisProcedureStep() {
             ) : (
               <div className="max-h-80 overflow-y-auto space-y-3">
                 {formState.procedureLines.map((procedure) => {
-                  const unitCost = getUnitCost(procedure);
-                  const totalCost = getTotalCost(procedure);
+                  // const unitCost = getUnitCost(procedure);
+                  // const totalCost = getTotalCost(procedure);
 
                   return (
                     <div
@@ -361,7 +359,7 @@ export default function DiagnosisProcedureStep() {
                         </div>
 
                         {/* Input fields in a row */}
-                       <div className="flex gap-3 max-w-xs">
+                        <div className="flex gap-3 max-w-xs">
                           {/* <Input
                             className="w-20"
                             label="Unit Cost"
