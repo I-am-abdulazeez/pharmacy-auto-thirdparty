@@ -42,7 +42,7 @@ export const initialFormState = {
 
 
   currentStep: 1,
-  totalSteps: 3,
+  totalSteps: 2,
   isEditing: false,
   entryno: 0
 };
@@ -312,7 +312,7 @@ export const deliveryActions = {
       Tobedeliverdby: safeGet(data.Tobedeliverdby, ""),
 
       currentStep: 1,
-      totalSteps: 3,
+      totalSteps: 2,
       isEditing: true,
       entryno: safeGet(data.EntryNo, 0),
       prescriptionFile: null as File | null,
