@@ -212,15 +212,31 @@ export default function DeliveriesPage() {
     setBenefitsError("");
   };
 
+  // const renderFormStep = () => {
+  //   switch (formState.currentStep) {
+  //     case 1:
+  //       return <EnrolleeSelectionStep />;
+  //     // case 2:
+  //     //   return <ProviderSetup />;
+  //     case 2:
+  //       return <DiagnosisProcedureStep />;
+  //     case 3:
+  //       return <AdditionalInfoStep />;
+  //     default:
+  //       return null;
+  //   }
+  // };
+
   const renderFormStep = () => {
     switch (formState.currentStep) {
       case 1:
-        return <EnrolleeSelectionStep />;
-      // case 2:
-      //   return <ProviderSetup />;
+        return (
+          <>
+            <EnrolleeSelectionStep />
+            <DiagnosisProcedureStep />
+          </>
+        );
       case 2:
-        return <DiagnosisProcedureStep />;
-      case 3:
         return <AdditionalInfoStep />;
       default:
         return null;
