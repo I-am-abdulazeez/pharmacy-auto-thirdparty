@@ -354,18 +354,18 @@ export default function DiagnosisProcedureStep() {
                             <p className="text-sm text-gray-500">
                               ID: {procedure.ProcedureId}
                             </p>
-                            <p className="text-sm font-medium text-gray-700">
+                            {/* <p className="text-sm font-medium text-gray-700">
                               Total: ₦{totalCost.toLocaleString()}
-                            </p>
+                            </p> */}
                           </div>
                         </div>
 
                         {/* Input fields in a row */}
-                        <div className="flex gap-3 max-w-xs">
-                          <Input
-                            className="w-24"
+                       <div className="flex gap-3 max-w-xs">
+                          {/* <Input
+                            className="w-20"
                             label="Unit Cost"
-                            placeholder="0"
+                            placeholder="1"
                             size="sm"
                             type="number"
                             value={unitCost}
@@ -375,11 +375,11 @@ export default function DiagnosisProcedureStep() {
                                 e.target.value
                               )
                             }
-                          />
+                          /> */}
                           <Input
-                            className="w-20"
+                            className="w-24"
                             label="Quantity"
-                            min="1"
+                            min="0"
                             placeholder="1"
                             size="sm"
                             type="number"
