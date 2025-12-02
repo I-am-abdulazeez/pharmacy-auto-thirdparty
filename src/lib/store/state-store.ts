@@ -1,4 +1,5 @@
 import { asyncChunk } from "stunk";
+import toast from "react-hot-toast";
 
 import { API_URL } from "../utils";
 
@@ -21,7 +22,7 @@ export const statesChunk = asyncChunk(
     const allStates = await response.json() as State[];
 
     return allStates
-      .filter((state) => state.Value !== "71" && state.Value !== "25")
+      .filter((state) => state.Value !== "71")
       .sort((a, b) => a.Text.localeCompare(b.Text));
   },
   {
@@ -55,6 +56,7 @@ export const citiesChunk = asyncChunk(async ({ stateId }: { stateId: string }) =
 
     return data;
   } catch (error) {
+    toast.error(error instanceof Error ? error.message : "An unexpected error occurred while fetching cities.");
     throw error;
   }
 },
