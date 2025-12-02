@@ -39,7 +39,13 @@ export const initialFormState = {
   additionalInformation: "",
   dosageDescription: "",
   comment: "",
+  memberaddress: "",
 
+  // NEW FIELDS FOR STATE SELECTION
+  selectedStateId: "",
+  selectedStateName: "",
+  fullAddress: "",
+  islagos: 0,  // 0 or 1
 
   currentStep: 1,
   totalSteps: 2,
@@ -293,7 +299,6 @@ export const deliveryActions = {
       phonenumber: safeGet(data.phonenumber, ""),
       cost: safeGet(data.cost, ""),
 
-      // Handle pharmacy data
       pharmacyName: safeGet(data.pharmacyname, ""),
       pharmacyId: safeGet(data.pharmacyid, ""),
 
@@ -310,6 +315,13 @@ export const deliveryActions = {
       dosageDescription: safeGet(data.DosageDescription, ""),
       comment: safeGet(data.Comment, ""),
       Tobedeliverdby: safeGet(data.Tobedeliverdby, ""),
+      memberaddress: safeGet(data.memberaddress, ""),
+
+      // NEW FIELDS
+      selectedStateId: "",
+      selectedStateName: "",
+      fullAddress: safeGet(data.memberaddress, ""),
+      islagos: safeGet(data.islagos, 0),
 
       currentStep: 1,
       totalSteps: 2,
@@ -367,6 +379,8 @@ export const deliveryActions = {
         Pharmacyid: formData.pharmacyId,
         PharmacyName: formData.pharmacyName,
         cost: formData.cost,
+        memberaddress: formData.fullAddress || formData.memberaddress,  // Use full address
+        islagos: formData.islagos,  // 0 or 1
         EntryNo: formData.isEditing ? formData.entryno : undefined,
       };
 
@@ -396,6 +410,8 @@ export const deliveryActions = {
         phonenumber: formData.phonenumber,
         Pharmacyid: formData.pharmacyId,
         PharmacyName: formData.pharmacyName,
+        memberaddress: formData.fullAddress || formData.memberaddress,  // Use full address
+        islagos: formData.islagos,  // 0 or 1
         EntryNo: formData.isEditing ? formData.entryno : undefined,
       };
 
@@ -553,11 +569,6 @@ export const deliveryActions = {
             toast.success("Delivery created! SMS and Email sent successfully!");
           }
           // } else if (smsSuccess || emailSuccess) {
-        } else if (emailSuccess) {
-          // const sentItems = [smsSuccess && "SMS", emailSuccess && "Email"].filter(Boolean).join(" and ");
-          const sentItems = [emailSuccess && "Email"].filter(Boolean).join(" and ");
-
-          toast.success(`Delivery created! ${sentItems} sent successfully.`);
         } else if (confirmDuplicates) {
           toast.success("Delivery created with duplicate confirmation!", {
             icon: "⚠️",
