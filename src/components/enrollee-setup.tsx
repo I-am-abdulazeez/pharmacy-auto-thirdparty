@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useChunkValue } from "stunk/react";
 import { Input } from "@heroui/input";
 
+import SelectStates from "./select-state";
+
 import { appChunk, authStore } from "@/lib/store/app-store";
 import { deliveryActions, deliveryFormState } from "@/lib/store/delivery-store";
 import { generateRandomCode } from "@/lib/utils";
@@ -57,6 +59,38 @@ export default function EnrolleeSelectionStep() {
     deliveryActions.updateFormField(field, value);
   };
 
+  const handleStateChange = (stateId: string, stateName: string) => {
+    deliveryActions.updateFormField("selectedStateId", stateId);
+    deliveryActions.updateFormField("selectedStateName", stateName);
+
+    // Check if the selected state is Lagos and update islagos
+    const isLagos = stateName.toLowerCase() === "lagos" ? 1 : 0;
+
+    deliveryActions.updateFormField("islagos", isLagos);
+
+    // Get current address without any previous state
+    let baseAddress = formState.memberaddress || "";
+
+    // Remove any previously appended state name
+    if (formState.selectedStateName) {
+      baseAddress = baseAddress
+        .replace(`, ${formState.selectedStateName}`, "")
+        .trim();
+    }
+
+    // Concatenate the new state to the address
+    const updatedAddress = baseAddress
+      ? `${baseAddress}, ${stateName}`
+      : stateName;
+
+    // Update the memberaddress field directly
+    deliveryActions.updateFormField("memberaddress", updatedAddress);
+  };
+
+  const handleMemberAddressChange = (value: string) => {
+    deliveryActions.updateFormField("memberaddress", value);
+  };
+
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">
@@ -84,16 +118,6 @@ export default function EnrolleeSelectionStep() {
         {/* Editable input fields */}
         <div className="mt-6 grid grid-cols-2 gap-6">
           <div className="space-y-4">
-            {/* <div className="flex gap-2">
-              <Input
-                label="Delivery Address / Code"
-                placeholder="Enter delivery address or generate code"
-                value={formState.deliveryaddress || ""}
-                onChange={(e) =>
-                  handleInputChange("deliveryaddress", e.target.value)
-                }
-              />
-            </div> */}
             <Input
               label="Email Address"
               placeholder="Enter Email Address"
@@ -113,7 +137,38 @@ export default function EnrolleeSelectionStep() {
               onChange={(e) => handleInputChange("phonenumber", e.target.value)}
             />
           </div>
+          <div>
+            <Input
+              label="Member Address"
+              placeholder="Enter member address (e.g., 12, Euba street, fadeyi)"
+              value={formState.memberaddress || ""}
+              onChange={(e) => handleMemberAddressChange(e.target.value)}
+            />
+          </div>
+          <div>
+            <SelectStates
+              isRequired={true}
+              value={formState.selectedStateId || ""}
+              onChange={handleStateChange}
+            />
+          </div>
         </div>
+
+        {/* Display Lagos delivery status if state is selected */}
+        {formState.selectedStateName && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-md">
+            <p className="text-sm text-gray-600">
+              Selected State:{" "}
+              <span className="font-medium">{formState.selectedStateName}</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Lagos Delivery:{" "}
+              <span className="font-semibold">
+                {formState.islagos === 1 ? "Yes ✓" : "No"}
+              </span>
+            </p>
+          </div>
+        )}
 
         <div className="mt-4 text-sm text-gray-500">
           <p>
