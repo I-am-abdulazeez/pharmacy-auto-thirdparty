@@ -12,8 +12,8 @@ import { toast } from "react-hot-toast";
 
 import { SearchIcon } from "../icons";
 
-import DiagnosisAutocomplete from "./diagnosis-select";
 import { useProcedureSearch } from "./procedure-select";
+import DiagnosisAutocomplete from "./diagnosis-select";
 
 import { deliveryActions, deliveryFormState } from "@/lib/store/delivery-store";
 
@@ -239,59 +239,45 @@ export default function DiagnosisProcedureStep() {
           </h3>
 
           <div className="space-y-4">
-            {/* Search and Select Row */}
-            <div className="grid grid-cols-1 md:grid-cols-20 gap-4">
-              {/* Left side - Search Input (35%) */}
-              <div className="md:col-span-7 space-y-3">
-                <Input
-                  label="Search Procedures"
-                  placeholder="Enter procedure name to search..."
-                  startContent={
-                    <SearchIcon className="w-4 h-4 text-gray-400" />
-                  }
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyUp={handleKeyPress}
-                />
-                <Button
-                  className="w-full"
-                  color="primary"
-                  isLoading={isLoading}
-                  onPress={handleSearchClick}
-                >
-                  Search
-                </Button>
-              </div>
+            {/* Search Input */}
+            <div className="flex gap-2">
+              <Input
+                className="flex-1"
+                placeholder="Search for medication..."
+                startContent={<SearchIcon className="w-4 h-4 text-gray-400" />}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyUp={handleKeyPress}
+              />
+              <Button
+                color="primary"
+                isLoading={isLoading}
+                onPress={handleSearchClick}
+              >
+                Search
+              </Button>
+            </div>
 
-              {/* Right side - Select Dropdown (65%) */}
-              <div className="md:col-span-13 space-y-3">
-                {hasSearched && items.length > 0 ? (
-                  <Select
-                    isOpen={isOpen}
-                    label="Select Procedure"
-                    placeholder="Choose from search results..."
-                    scrollRef={scrollerRef}
-                    selectedKeys={selectedProcedure}
-                    onOpenChange={setIsOpen}
-                    onSelectionChange={handleSelectionChange}
-                  >
-                    {items.map((item: Procedure) => (
-                      <SelectItem
-                        key={`${item.ProcedureId}-${item.ProcedureName}`}
-                      >
-                        {item.ProcedureName}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                ) : (
-                  <div className="h-14 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
-                    <p className="text-gray-400 text-sm">
-                      {hasSearched
-                        ? "No results found"
-                        : "Search to see options"}
-                    </p>
-                  </div>
-                )}
+            {/* Results Select */}
+            {hasSearched && items.length > 0 ? (
+              <div className="space-y-3">
+                <Select
+                  isOpen={isOpen}
+                  label="Select Medication"
+                  placeholder="Choose from search results..."
+                  scrollRef={scrollerRef}
+                  selectedKeys={selectedProcedure}
+                  onOpenChange={setIsOpen}
+                  onSelectionChange={handleSelectionChange}
+                >
+                  {items.map((item: Procedure) => (
+                    <SelectItem
+                      key={`${item.ProcedureId}-${item.ProcedureName}`}
+                    >
+                      {item.ProcedureName}
+                    </SelectItem>
+                  ))}
+                </Select>
 
                 <Button
                   className="w-full"
@@ -302,7 +288,21 @@ export default function DiagnosisProcedureStep() {
                   Add Medication
                 </Button>
               </div>
-            </div>
+            ) : hasSearched && items.length === 0 && !isLoading ? (
+              <div className="text-center py-4 border-2 border-dashed border-gray-200 rounded-lg">
+                <p className="text-gray-500">{`No medications found for "${inputValue}"`}</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Try a different search term
+                </p>
+              </div>
+            ) : !hasSearched && !isLoading ? (
+              <div className="text-center py-4 border-2 border-dashed border-gray-200 rounded-lg">
+                <SearchIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm text-gray-500">
+                  {`Enter a search term and click "Search" to find medications`}
+                </p>
+              </div>
+            ) : null}
 
             {/* Loading more indicator */}
             {isLoading && items.length > 0 && (
@@ -311,26 +311,11 @@ export default function DiagnosisProcedureStep() {
               </div>
             )}
 
-            {/* Search state messages */}
-            {hasSearched && items.length === 0 && !isLoading && (
-              <div className="text-center py-4 text-gray-500">
-                <p>{`No procedures found for "${inputValue}"`}</p>
-                <p className="text-sm mt-1">Try a different search term</p>
-              </div>
-            )}
-
-            {!hasSearched && !isLoading && (
-              <div className="text-center py-4 text-gray-500">
-                <SearchIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">
-                  {`Enter a search term and click "Search" to find procedures`}
-                </p>
-              </div>
-            )}
-
             {/* Added Procedures List */}
             {formState.procedureLines.length === 0 ? (
-              <p className="text-gray-500 text-sm">No procedures added yet</p>
+              <p className="text-gray-500 text-sm text-center py-2">
+                No medications added yet
+              </p>
             ) : (
               <div className="max-h-80 overflow-y-auto space-y-3">
                 {formState.procedureLines.map((procedure) => {
