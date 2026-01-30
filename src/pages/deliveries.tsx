@@ -104,7 +104,7 @@ export default function DeliveriesPage() {
           filters.email,
           filters.pharmacy,
           filters.code,
-          showAll
+          showAll,
         );
       } catch (error) {
         toast.error(`Error fetching deliveries: ${error}`);
@@ -112,7 +112,7 @@ export default function DeliveriesPage() {
         isFetchingRef.current = false;
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -188,7 +188,7 @@ export default function DeliveriesPage() {
 
     try {
       const response = await getEnrolleeBenefitsBycif(
-        enrolleeData.Member_MemberUniqueID
+        enrolleeData.Member_MemberUniqueID,
       );
 
       if (response && response.result) {

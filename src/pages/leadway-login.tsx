@@ -49,7 +49,7 @@ export default function LeadwayLoginPage() {
         isLeadway: true,
       }));
       setApiError("");
-      navigate("/leadway/pharmacy");
+      navigate("/leadway/enrollees");
 
       return;
     }
@@ -75,7 +75,7 @@ export default function LeadwayLoginPage() {
 
         setApiError("");
 
-        navigate("/leadway/pharmacy");
+        navigate("/leadway/enrollees");
       } else {
         const errorMsg =
           response.status !== 200
@@ -86,7 +86,7 @@ export default function LeadwayLoginPage() {
       }
     } catch (error) {
       setApiError(
-        `${(error as Error).message || "An unexpected error occurred"}`
+        `${(error as Error).message || "An unexpected error occurred"}`,
       );
     } finally {
       setIsLoading(false);

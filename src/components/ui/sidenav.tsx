@@ -1,13 +1,16 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import { Button } from "@heroui/button";
 
 import {
-  PharmacyIcon,
+  // PharmacyIcon,
   EnrolleeIcon,
   DeliveryIcon,
   PayAutoLineIcon,
   PendingIcon,
 } from "@/components/icons";
+import { authStore } from "@/lib/store/app-store";
 
 interface SideNavProps {
   currentPath: string;
@@ -16,11 +19,11 @@ interface SideNavProps {
 }
 
 const leadwayLinks = [
-  {
-    name: "Pharmacy",
-    path: "/leadway/pharmacy",
-    icon: PharmacyIcon,
-  },
+  // {
+  //   name: "Pharmacy",
+  //   path: "/leadway/pharmacy",
+  //   icon: PharmacyIcon,
+  // },
   {
     name: "Enrollees",
     path: "/leadway/enrollees",
@@ -51,7 +54,42 @@ export default function SideNav({
   userType,
   onClose,
 }: SideNavProps) {
+  const navigate = useNavigate();
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navLinks = userType === "leadway" ? leadwayLinks : providerLinks;
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+
+    try {
+      // Clear auth store
+      authStore.set({
+        user: null,
+        isLoading: false,
+        isLeadway: false,
+        isProvider: false,
+      });
+
+      // Show success message
+      toast.success("Logged out successfully");
+
+      // Close mobile menu if open
+      if (onClose) {
+        onClose();
+      }
+
+      // Navigate to appropriate login page
+      if (userType === "leadway") {
+        navigate("/leadway-login");
+      } else {
+        navigate("/provider-login");
+      }
+    } catch (error) {
+      toast.error(`Error logging out:  ${(error as Error).message}`);
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -141,7 +179,36 @@ export default function SideNav({
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 space-y-3">
+        {/* Logout Button */}
+        <Button
+          className="w-full justify-start gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-all duration-300"
+          color="danger"
+          isLoading={isLoggingOut}
+          startContent={
+            !isLoggingOut ? (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                />
+              </svg>
+            ) : null
+          }
+          variant="light"
+          onPress={handleLogout}
+        >
+          {isLoggingOut ? "Logging out..." : "Logout"}
+        </Button>
+
+        {/* Version Info */}
         <div className="px-4 py-3 bg-gray-100 rounded-lg">
           <p className="text-xs text-gray-600">Version 1.0.0</p>
           <p className="text-xs text-gray-500 mt-1">
