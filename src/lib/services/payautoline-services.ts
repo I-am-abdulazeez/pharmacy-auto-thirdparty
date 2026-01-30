@@ -3,13 +3,24 @@ import { API_URL } from "../utils";
 /**
  * Marks selected deliveries as paid
  * @param entryNumbers - Array of entry numbers to mark as paid
+ * @param pharmacyId - Pharmacy ID from logged in user
+ * @param totalCost - Total cost of all selected deliveries
+ * @param enrolleeId - Enrollee ID from the deliveries
  * @returns Promise with the API response
  */
-export const payAutoLine = async (entryNumbers: string[]): Promise<any> => {
+export const payAutoLine = async (
+  entryNumbers: string[],
+  pharmacyId: string | number,
+  totalCost: number,
+  enrolleeId: string
+): Promise<any> => {
   try {
-    const payload = entryNumbers.map((entryNo) => ({
-      Entryno: entryNo,
-    }));
+    const payload = {
+      Entryno: entryNumbers,
+      PharmacyId: Number(pharmacyId),
+      Cost: totalCost,
+      EnrolleeId: enrolleeId,
+    };
 
     const response = await fetch(`${API_URL}/PharmacyDelivery/PayAutoline`, {
       method: "POST",
