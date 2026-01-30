@@ -9,6 +9,16 @@ import { appChunk, authStore } from "./app-store";
 import { Delivery, Diagnosis, Procedure, Provider } from "@/types";
 import { getDeliveries } from "@/lib/services/delivery-service";
 
+
+export interface ProviderPickup {
+  EnrolleeName: string;
+  scheme_type: string;
+  Pharmacyname: string;
+  inputteddate: string;
+  EnrolleeId: string;
+  TimeUsed: string;
+}
+
 export const initialFormState = {
   enrolleeId: "",
   enrolleeName: "",
@@ -68,7 +78,11 @@ export const deliveryStore = chunk({
   deliveries: [] as Delivery[],
   pendingApprovalList: [] as PendingApproval[],
   showDetailView: false,
+  providerPickups: [] as ProviderPickup[], // New field for provider pickups summary
+  pickupDetails: [] as Delivery[], // Field for pickup details
   isLoading: false,
+  isLoadingDetails: false, // New field for details loading state
+  detailsError: null as string | null, // New field for details error
   isSubmitting: false,
   isPackingLoading: false,
   error: null as string | null,
