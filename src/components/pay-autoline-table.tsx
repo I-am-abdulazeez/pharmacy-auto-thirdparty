@@ -11,10 +11,20 @@ import {
 import { Badge } from "@heroui/badge";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
+import { Pagination } from "@heroui/pagination";
+import { Tooltip } from "@heroui/tooltip";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
 import toast from "react-hot-toast";
 
 import { editDelivery, createDelivery } from "@/lib/services/delivery-service";
 import { AUTOLINE_COLUMNS } from "@/lib/constants";
+import { API_URL } from "@/lib/utils";
 
 interface Delivery {
   EntryNo?: number;
@@ -58,20 +68,38 @@ interface PayAutoLineTableProps {
   selectedKeys: Set<string>;
   onSelectionChange: (keys: Set<string>) => void;
   isSelectable?: boolean;
+  onRefresh?: () => void;
 }
+
+const ROWS_PER_PAGE = 10;
+
+// Add actions column to the existing columns
+const COLUMNS_WITH_ACTIONS = [
+  ...AUTOLINE_COLUMNS,
+  { key: "actions", label: "Actions" },
+];
 
 export default function PayAutoLineTable({
   deliveries,
   selectedKeys,
   onSelectionChange,
   isSelectable = true,
+  onRefresh,
 }: PayAutoLineTableProps) {
   const [updatingQuantities, setUpdatingQuantities] = useState<
     Record<string, boolean>
   >({});
+  const [deletingRows, setDeletingRows] = useState<Record<string, boolean>>({});
   const [localQuantities, setLocalQuantities] = useState<
     Record<string, number>
   >({});
+  const [page, setPage] = useState(1);
+
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deliveryToDelete, setDeliveryToDelete] = useState<Delivery | null>(
+    null,
+  );
 
   const rows = useMemo(
     () =>
@@ -90,8 +118,17 @@ export default function PayAutoLineTable({
         ispaid: delivery.ispaid ?? null,
         paydate: delivery.paydate || null,
       })),
-    [deliveries, localQuantities]
+    [deliveries, localQuantities],
   );
+
+  const pages = Math.ceil(rows.length / ROWS_PER_PAGE);
+
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * ROWS_PER_PAGE;
+    const end = start + ROWS_PER_PAGE;
+
+    return rows.slice(start, end);
+  }, [page, rows]);
 
   const updateQuantityWithDecrement = useCallback(
     async (delivery: Delivery, newQuantity: number) => {
@@ -202,7 +239,7 @@ export default function PayAutoLineTable({
             Deliveries: [newDelivery],
             ConfirmDuplicates: false,
           },
-          true
+          true,
         );
 
         if (createResponse.status !== 200) {
@@ -211,7 +248,7 @@ export default function PayAutoLineTable({
 
         // Single success message after both operations complete
         toast.success(
-          `Quantity reduced to ${newQuantity}! New pickup created for ${quantityDifference} unit(s) without pharmacy.`
+          `Quantity reduced to ${newQuantity}! New pickup created for ${quantityDifference} unit(s) without pharmacy.`,
         );
       } catch (error) {
         // Revert on error
@@ -223,11 +260,19 @@ export default function PayAutoLineTable({
           return newState;
         });
         toast.error(
-          `Failed to update quantity: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to update quantity: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
+      } finally {
+        setUpdatingQuantities((prev) => {
+          const newState = { ...prev };
+
+          delete newState[entryNo];
+
+          return newState;
+        });
       }
     },
-    [localQuantities]
+    [localQuantities],
   );
 
   const handleQuantityChange = useCallback(
@@ -245,11 +290,85 @@ export default function PayAutoLineTable({
         updateQuantityWithDecrement(delivery, newQuantity);
       }
     },
-    [localQuantities, isSelectable, updateQuantityWithDecrement]
+    [localQuantities, isSelectable, updateQuantityWithDecrement],
   );
+
+  const handleDeleteDelivery = useCallback(async (delivery: Delivery) => {
+    const entryNo = delivery.EntryNo;
+
+    if (!entryNo) {
+      toast.error("Invalid entry number");
+
+      return;
+    }
+
+    // Open confirmation modal instead of window.confirm
+    setDeliveryToDelete(delivery);
+    setShowDeleteModal(true);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deliveryToDelete) return;
+
+    const entryNo = deliveryToDelete.EntryNo;
+    const procedureName =
+      deliveryToDelete.ProcedureLines?.[0]?.ProcedureName || "this drug";
+    const entryNoStr = String(entryNo);
+
+    setShowDeleteModal(false);
+    setDeletingRows((prev) => ({ ...prev, [entryNoStr]: true }));
+
+    try {
+      const response = await fetch(
+        `${API_URL}/Pharmacy/Pharmacy_removeDrug?entryno=${entryNo}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.status === 200) {
+        toast.success(`Successfully deleted ${procedureName}`);
+
+        // Refresh the table if onRefresh callback is provided
+        if (onRefresh) {
+          onRefresh();
+        }
+      } else {
+        throw new Error(result.message || "Failed to delete delivery");
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to delete: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    } finally {
+      setDeletingRows((prev) => {
+        const newState = { ...prev };
+
+        delete newState[entryNoStr];
+
+        return newState;
+      });
+      setDeliveryToDelete(null);
+    }
+  }, [deliveryToDelete, onRefresh]);
+
+  const cancelDelete = useCallback(() => {
+    setShowDeleteModal(false);
+    setDeliveryToDelete(null);
+  }, []);
 
   const renderCell = (item: any, columnKey: string) => {
     const isUpdating = updatingQuantities[item.key];
+    const isDeleting = deletingRows[item.key];
 
     switch (columnKey) {
       case "EnrolleeName":
@@ -323,6 +442,38 @@ export default function PayAutoLineTable({
             {item.ispaid ? "Paid" : "Pending"}
           </Badge>
         );
+      case "actions":
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Tooltip color="danger" content="Delete delivery">
+              <Button
+                isIconOnly
+                color="danger"
+                isDisabled={isDeleting}
+                isLoading={isDeleting}
+                size="sm"
+                variant="light"
+                onPress={() => handleDeleteDelivery(item.original)}
+              >
+                {!isDeleting && (
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                )}
+              </Button>
+            </Tooltip>
+          </div>
+        );
       default:
         return getKeyValue(item, columnKey);
     }
@@ -353,59 +504,140 @@ export default function PayAutoLineTable({
   }
 
   return (
-    <Table
-      isStriped
-      aria-label="Pharmacy deliveries table"
-      selectedKeys={isSelectable ? selectedKeys : undefined}
-      selectionMode={isSelectable ? "multiple" : "none"}
-      topContent={
-        <div className="flex flex-col gap-2">
-          <h3 className="text-lg font-semibold">Pickup Deliveries</h3>
-          {isSelectable ? (
-            <>
-              <p className="text-sm text-gray-600">
-                Click - to reduce quantity (creates new unassigned pickup for
-                difference)
-              </p>
-              <p className="text-xs text-gray-500">
-                Total: {deliveries.length} delivery(s)
-                {selectedKeys.size > 0 && ` | Selected: ${selectedKeys.size}`}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-gray-600">View-only mode</p>
-              <p className="text-xs text-gray-500">
-                Total: {deliveries.length} delivery(s)
-              </p>
-            </>
-          )}
-        </div>
-      }
-      onSelectionChange={
-        isSelectable
-          ? (keys) => {
-              if (keys === "all") {
-                onSelectionChange(new Set(rows.map((r) => r.key)));
-              } else {
-                onSelectionChange(keys as Set<string>);
-              }
-            }
-          : undefined
-      }
-    >
-      <TableHeader columns={AUTOLINE_COLUMNS}>
-        {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
-      </TableHeader>
-      <TableBody items={rows}>
-        {(item) => (
-          <TableRow key={item.key}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, String(columnKey))}</TableCell>
+    <>
+      <Table
+        isStriped
+        aria-label="Pharmacy deliveries table"
+        bottomContent={
+          pages > 1 ? (
+            <div className="flex w-full justify-center">
+              <Pagination
+                isCompact
+                showControls
+                showShadow
+                color="secondary"
+                page={page}
+                total={pages}
+                onChange={(page) => setPage(page)}
+              />
+            </div>
+          ) : null
+        }
+        selectedKeys={isSelectable ? selectedKeys : undefined}
+        selectionMode={isSelectable ? "multiple" : "none"}
+        topContent={
+          <div className="flex flex-col gap-2">
+            <h3 className="text-lg font-semibold">Pickup Deliveries</h3>
+            {isSelectable ? (
+              <>
+                <p className="text-sm text-gray-600">
+                  Click - to reduce quantity (creates new unassigned pickup for
+                  difference)
+                </p>
+                <p className="text-xs text-gray-500">
+                  Total: {deliveries.length} delivery(s)
+                  {selectedKeys.size > 0 && ` | Selected: ${selectedKeys.size}`}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600">View-only mode</p>
+                <p className="text-xs text-gray-500">
+                  Total: {deliveries.length} delivery(s)
+                </p>
+              </>
             )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+          </div>
+        }
+        onSelectionChange={
+          isSelectable
+            ? (keys) => {
+                if (keys === "all") {
+                  onSelectionChange(new Set(rows.map((r) => r.key)));
+                } else {
+                  onSelectionChange(keys as Set<string>);
+                }
+              }
+            : undefined
+        }
+      >
+        <TableHeader columns={COLUMNS_WITH_ACTIONS}>
+          {(column) => (
+            <TableColumn key={column.key}>{column.label}</TableColumn>
+          )}
+        </TableHeader>
+        <TableBody items={paginatedRows}>
+          {(item) => (
+            <TableRow key={item.key}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, String(columnKey))}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        backdrop="blur"
+        isOpen={showDeleteModal}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) cancelDelete();
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <svg
+                className="w-6 h-6 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                />
+              </svg>
+              <span className="text-red-600">Confirm Deletion</span>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-3">
+              <p className="text-base">
+                Are you sure you want to delete this delivery?
+              </p>
+              {deliveryToDelete && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm font-semibold text-red-900">
+                    {deliveryToDelete.ProcedureLines?.[0]?.ProcedureName ||
+                      "Unknown Drug"}
+                  </p>
+                  <p className="text-xs text-red-700 mt-1">
+                    Enrollee: {deliveryToDelete.EnrolleeName || "N/A"}
+                  </p>
+                  <p className="text-xs text-red-700">
+                    Entry No: {deliveryToDelete.EntryNo}
+                  </p>
+                </div>
+              )}
+              <p className="text-sm text-gray-600">
+                ⚠️ This action cannot be undone.
+              </p>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="default" variant="light" onPress={cancelDelete}>
+              Cancel
+            </Button>
+            <Button color="danger" onPress={confirmDelete}>
+              Delete
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
   );
 }
