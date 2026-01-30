@@ -43,7 +43,7 @@ export default function PayAutoLinePage() {
         "",
         String(pharmacyId),
         codeToPharmacy,
-        false
+        false,
       );
 
       if (deliveries.length > 0) {
@@ -54,6 +54,38 @@ export default function PayAutoLinePage() {
     } finally {
       isFetchingRef.current = false;
     }
+  }, [enrolleeId, codeToPharmacy, user?.provider_id]);
+
+  // Refresh function to reload deliveries after deletion
+  const handleRefresh = useCallback(() => {
+    // Force refresh by clearing deliveries first, then refetching
+    deliveryStore.set((state) => ({
+      ...state,
+      deliveries: [],
+      isLoadingDetails: true,
+    }));
+
+    // Reset the ref to allow the same search to run again
+    lastSearchRef.current = "";
+    isFetchingRef.current = false;
+
+    // Use setTimeout to ensure state update happens before fetch
+    setTimeout(async () => {
+      try {
+        const pharmacyId = user?.provider_id || "";
+
+        await getDeliveries(
+          enrolleeId,
+          "",
+          "",
+          String(pharmacyId),
+          codeToPharmacy,
+          false,
+        );
+      } catch (error) {
+        toast.error(`Refresh failed: ${(error as Error).message}`);
+      }
+    }, 100);
   }, [enrolleeId, codeToPharmacy, user?.provider_id]);
 
   useEffect(() => {
@@ -76,18 +108,69 @@ export default function PayAutoLinePage() {
       return;
     }
 
+    // Get selected deliveries
+    const selectedDeliveries = deliveries.filter((d) =>
+      selectedKeys.has(String(d.EntryNo)),
+    );
+
+    // Validate costs - check if any delivery has cost = 0 or N/A
+    const invalidCosts = selectedDeliveries.filter((d) => {
+      const cost = d.cost || d.ProcedureLines?.[0]?.cost || "0";
+
+      return cost === "0" || cost === "N/A" || cost === "";
+    });
+
+    if (invalidCosts.length > 0) {
+      toast.error(
+        "Some deliveries have no cost set. Please contact the provider to set the cost before proceeding.",
+      );
+
+      return;
+    }
+
+    // Calculate total cost
+    const totalCost = selectedDeliveries.reduce((sum, delivery) => {
+      const cost = parseFloat(
+        delivery.cost || delivery.ProcedureLines?.[0]?.cost || "0",
+      );
+
+      return sum + cost;
+    }, 0);
+
+    // Get enrollee ID (should be same for all selected)
+    const enrolleeIdFromDelivery = selectedDeliveries[0]?.EnrolleeId || "";
+
+    if (!enrolleeIdFromDelivery) {
+      toast.error("Unable to find enrollee ID for selected deliveries");
+
+      return;
+    }
+
+    // Get pharmacy ID from logged in user
+    const pharmacyId = user?.provider_id;
+
+    if (!pharmacyId) {
+      toast.error("Unable to find pharmacy ID. Please log in again.");
+
+      return;
+    }
+
     setIsPaymentLoading(true);
     try {
       const entryNumbers = Array.from(selectedKeys);
 
-      await payAutoLine(entryNumbers);
+      await payAutoLine(
+        entryNumbers,
+        pharmacyId,
+        totalCost,
+        enrolleeIdFromDelivery,
+      );
 
       toast.success(
-        `Successfully marked ${selectedKeys.size} delivery(s) as paid`
+        `Successfully marked ${selectedKeys.size} delivery(s) as paid. Total: ₦${totalCost.toFixed(2)}`,
       );
       setSelectedKeys(new Set());
-
-      handleSearch();
+      handleRefresh();
     } catch (error) {
       toast.error(`Payment failed: ${(error as Error).message}`);
     } finally {
@@ -126,7 +209,7 @@ export default function PayAutoLinePage() {
             radius="sm"
             value={enrolleeId}
             onChange={(e) => setEnrolleeId(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyUp={handleKeyPress}
           />
 
           <Input
@@ -135,7 +218,7 @@ export default function PayAutoLinePage() {
             radius="sm"
             value={codeToPharmacy}
             onChange={(e) => setCodeToPharmacy(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyUp={handleKeyPress}
           />
         </div>
 
@@ -143,7 +226,7 @@ export default function PayAutoLinePage() {
           <Button
             className="text-white"
             color="warning"
-            isDisabled={isLoading}
+            isDisabled={isLoading || !codeToPharmacy}
             isLoading={isLoading}
             radius="sm"
             onPress={handleSearch}
@@ -183,7 +266,9 @@ export default function PayAutoLinePage() {
         ) : (
           <PayAutoLineTable
             deliveries={deliveries}
+            isSelectable={true}
             selectedKeys={selectedKeys}
+            onRefresh={handleRefresh}
             onSelectionChange={setSelectedKeys}
           />
         )}
