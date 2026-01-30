@@ -163,6 +163,135 @@ export const createDelivery = async (
 };
 
 /**
+ * Fetches provider pickups (summary list for provider portal)
+ * @param pharmacyid - Pharmacy ID
+ * @param showall - Whether to show all deliveries
+ */
+export const getProviderPickups = async (
+  pharmacyid: string,
+  showall: boolean = false
+): Promise<any> => {
+  try {
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoading: true,
+      error: null,
+    }));
+
+    const params = new URLSearchParams();
+
+    params.append("pharmacyid", pharmacyid);
+    params.append("showall", String(showall));
+
+    const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment_Provider?${params.toString()}`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.result) {
+      // Store as providerPickups (different from deliveries)
+      deliveryStore.set((state) => ({
+        ...state,
+        providerPickups: Array.isArray(data.result) ? data.result : [data.result],
+        isLoading: false,
+        error: null,
+      }));
+
+      return data;
+    } else {
+      throw new Error(data.ReturnMessage || "Failed to fetch pickups");
+    }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to connect to the server";
+
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoading: false,
+      error: errorMessage,
+      providerPickups: [],
+    }));
+
+    throw error;
+  }
+};
+
+/**
+ * Fetches pickup details for a specific enrollee
+ * @param pharmacyid - Pharmacy ID
+ * @param enrolleeId - Enrollee ID
+ * @param showall - Whether to show all deliveries
+ */
+export const getPickupDetails = async (
+  pharmacyid: string,
+  enrolleeId: string,
+  showall: boolean = false
+): Promise<any> => {
+  try {
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoadingDetails: true,
+      detailsError: null,
+    }));
+
+    const params = new URLSearchParams();
+
+    params.append("pharmacyid", pharmacyid);
+    params.append("enrolleeid", enrolleeId);
+    params.append("showall", String(showall));
+
+    const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.result) {
+      const transformedDeliveries = Array.isArray(data.result)
+        ? data.result.map(transformApiResponse)
+        : [transformApiResponse(data.result)];
+
+      deliveryStore.set((state) => ({
+        ...state,
+        pickupDetails: transformedDeliveries,
+        isLoadingDetails: false,
+        detailsError: null,
+      }));
+
+      return data;
+    } else {
+      throw new Error(data.ReturnMessage || "Failed to fetch pickup details");
+    }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to connect to the server";
+
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoadingDetails: false,
+      detailsError: errorMessage,
+      pickupDetails: [],
+    }));
+
+    throw error;
+  }
+};
+
+
+/**
  * Updates an existing delivery
  * @param formData - Form data with delivery updates
  */
