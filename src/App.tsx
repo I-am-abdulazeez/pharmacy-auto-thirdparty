@@ -10,6 +10,8 @@ import PayAutoLinePage from "@/pages/providers/pay-autoline";
 import PendingCollections from "@/pages/providers/pending-collections";
 import ProtectedLeadwayRoute from "@/components/shared/protected-leadway";
 import ProtectedProviderRoute from "@/components/shared/protected-provider";
+import PendingDeliveriesPage from "@/pages/providers/pending-deliveries";
+import ReassignOrClaimPage from "@/pages/providers/reassign-claim";
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
       <Route element={<ProtectedProviderRoute />} path="/provider/">
         <Route element={<PayAutoLinePage />} path="pay-autoline" />
         <Route element={<PendingCollections />} path="pending-collections" />
+        <Route element={<PendingDeliveriesPage />} path="pending-deliveries" />
+        <Route element={<ReassignOrClaimPage />} path="reassign-or-claim" />
       </Route>
     </Routes>
   );
