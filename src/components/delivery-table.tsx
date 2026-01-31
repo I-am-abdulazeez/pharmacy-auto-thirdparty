@@ -74,6 +74,7 @@ interface RowItem {
   codetopharmacy: string;
   diagnosisName: string;
   procedureName: string;
+  procedurequantity: number;
   deliveryStatus: string;
   actions: {
     isDelivered: boolean;
@@ -166,7 +167,7 @@ export default function DeliveryTable({
       deliveryActions.setFormData(delivery.original);
     } catch (error) {
       toast.error(
-        `Failed to load delivery for editing: ${(error as Error).message}`
+        `Failed to load delivery for editing: ${(error as Error).message}`,
       );
     } finally {
       setIsEditing((prev) => ({ ...prev, [delivery.key]: false }));
@@ -268,6 +269,7 @@ export default function DeliveryTable({
           cost: delivery.cost || "N/A",
           diagnosisName: delivery.DiagnosisLines?.[0]?.DiagnosisName || "N/A",
           procedureName: delivery.ProcedureLines?.[0]?.ProcedureName || "N/A",
+          procedurequantity: delivery.ProcedureLines?.[0]?.ProcedureQuantity,
           deliveryStatus,
           actions: {
             isDelivered: delivery.IsDelivered ?? false,
@@ -275,7 +277,7 @@ export default function DeliveryTable({
           original: delivery,
         };
       }),
-    [deliveries]
+    [deliveries],
   );
 
   const filteredRows = rows;
@@ -324,6 +326,8 @@ export default function DeliveryTable({
         return <span className="text-sm">{item.diagnosisName}</span>;
       case "procedureName":
         return <span className="text-sm">{item.procedureName}</span>;
+      case "procedurequantity":
+        return <span className="text-sm">{item.procedurequantity}</span>;
       case "dosageDescription":
         return (
           <span className="text-sm text-gray-600">
