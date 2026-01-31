@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useChunkValue } from "stunk/react";
 import { Spinner } from "@heroui/spinner";
 import { Switch } from "@heroui/switch";
 import { Button } from "@heroui/button";
+import toast from "react-hot-toast";
 
 import {
   getProviderPickups,
@@ -15,6 +16,7 @@ import PayAutoLineTable from "@/components/pay-autoline-table";
 import PageHeader from "@/components/ui/page-header";
 import { DownloadIcon } from "@/components/icons";
 import ProviderPickupsTable from "@/components/pickup/provider-pickup-table";
+import { payAutoLine } from "@/lib/services/payautoline-services";
 
 export default function PendingCollectionsPage() {
   const {
@@ -31,6 +33,7 @@ export default function PendingCollectionsPage() {
   const [selectedEnrolleeId, setSelectedEnrolleeId] = useState<string | null>(
     null,
   );
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
 
   const pharmacyId = user?.provider_id?.toString() || "";
 
@@ -46,19 +49,35 @@ export default function PendingCollectionsPage() {
     getPickupDetails(pharmacyId, enrolleeId, showAll);
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     if (selectedEnrolleeId) {
-      getPickupDetails(pharmacyId, selectedEnrolleeId, showAll);
+      // Force refresh by clearing the state first, then fetching again
+      deliveryStore.set((state) => ({
+        ...state,
+        pickupDetails: [],
+        isLoadingDetails: true,
+      }));
+
+      // Use setTimeout to ensure state update happens before fetch
+      setTimeout(() => {
+        getPickupDetails(pharmacyId, selectedEnrolleeId, showAll);
+      }, 100);
     }
-  };
+  }, [selectedEnrolleeId, pharmacyId, showAll]);
 
   const handleBackToList = () => {
     setSelectedEnrolleeId(null);
+    setSelectedKeys(new Set()); // Clear selections
     deliveryStore.set((state) => ({
       ...state,
       pickupDetails: [],
       detailsError: null,
     }));
+
+    // Always fetch fresh data when going back to list
+    if (pharmacyId) {
+      getProviderPickups(pharmacyId, showAll);
+    }
   };
 
   const handleDownloadPDF = () => {
@@ -72,6 +91,56 @@ export default function PendingCollectionsPage() {
       getProviderPickups(pharmacyId, showAll);
     }
   };
+
+  const handlePaySelected = useCallback(
+    async (selectedDeliveries: any[], totalCost: number) => {
+      if (selectedDeliveries.length === 0) {
+        toast.error("Please select at least one delivery to pay");
+
+        return;
+      }
+
+      // Get enrollee ID (should be same for all selected)
+      const enrolleeIdFromDelivery =
+        selectedDeliveries[0]?.EnrolleeId || selectedEnrolleeId || "";
+
+      if (!enrolleeIdFromDelivery) {
+        toast.error("Unable to find enrollee ID for selected deliveries");
+
+        return;
+      }
+
+      setIsPaymentLoading(true);
+      try {
+        const entryNumbers = selectedDeliveries.map((d) => String(d.EntryNo));
+
+        await payAutoLine(
+          entryNumbers,
+          pharmacyId,
+          totalCost,
+          enrolleeIdFromDelivery,
+        );
+
+        toast.success(
+          `Successfully marked ${selectedDeliveries.length} delivery(s) as paid. Total: ₦${totalCost.toFixed(2)}`,
+        );
+        setSelectedKeys(new Set());
+
+        // Refresh current details view
+        handleRefresh();
+
+        // Also refresh the main pickups list in background
+        if (pharmacyId) {
+          getProviderPickups(pharmacyId, showAll);
+        }
+      } catch (error) {
+        toast.error(`Payment failed: ${(error as Error).message}`);
+      } finally {
+        setIsPaymentLoading(false);
+      }
+    },
+    [pharmacyId, selectedEnrolleeId, showAll, handleRefresh],
+  );
 
   if (isLoading && !selectedEnrolleeId) {
     return (
@@ -165,15 +234,47 @@ export default function PendingCollectionsPage() {
                 </h2>
               </div>
 
-              <Button
-                color="primary"
-                isDisabled={(pickupDetails || []).length === 0}
-                startContent={<DownloadIcon />}
-                variant="flat"
-                onPress={handleDownloadPDF}
-              >
-                Download PDF
-              </Button>
+              <div className="flex gap-2">
+                {user?.surname === "PHARMACY BENEFIT PROGRAMME" &&
+                  selectedKeys.size > 0 && (
+                    <Button
+                      color="success"
+                      isDisabled={isPaymentLoading}
+                      isLoading={isPaymentLoading}
+                      onPress={() => {
+                        const selectedDeliveries = (pickupDetails || []).filter(
+                          (d: any) => selectedKeys.has(String(d.EntryNo)),
+                        );
+                        const totalCost = selectedDeliveries.reduce(
+                          (sum: number, delivery: any) => {
+                            const cost = parseFloat(
+                              delivery.cost ||
+                                delivery.ProcedureLines?.[0]?.cost ||
+                                "0",
+                            );
+
+                            return sum + cost;
+                          },
+                          0,
+                        );
+
+                        handlePaySelected(selectedDeliveries, totalCost);
+                      }}
+                    >
+                      Mark as Paid ({selectedKeys.size})
+                    </Button>
+                  )}
+
+                <Button
+                  color="primary"
+                  isDisabled={(pickupDetails || []).length === 0}
+                  startContent={<DownloadIcon />}
+                  variant="flat"
+                  onPress={handleDownloadPDF}
+                >
+                  Download PDF
+                </Button>
+              </div>
             </div>
 
             {detailsError ? (
@@ -186,8 +287,11 @@ export default function PendingCollectionsPage() {
             ) : (
               <PayAutoLineTable
                 deliveries={pickupDetails || []}
+                enablePharmacyBenefitSelection={true}
                 isSelectable={false}
                 selectedKeys={selectedKeys}
+                user={user}
+                onPaySelected={handlePaySelected}
                 onRefresh={handleRefresh}
                 onSelectionChange={setSelectedKeys}
               />
