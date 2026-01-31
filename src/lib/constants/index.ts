@@ -51,7 +51,7 @@ export const backdoorUser: User = {
 
 export const DELIVERY_COLUMNS = [
   { key: "enrolleeName", label: "Enrollee Name" },
-  { key: "email", label: "Enrollee Email" },
+  // { key: "email", label: "Enrollee Email" },
   { key: "schemeType", label: "Scheme Type" },
   { key: "enrolleeId", label: "Enrollee ID" },
   { key: "inputtedDate", label: "Input Date" },
@@ -59,10 +59,11 @@ export const DELIVERY_COLUMNS = [
   { key: "codetopharmacy", label: "Code" },
   { key: "diagnosisName", label: "Diagnosis" },
   { key: "procedureName", label: "Procedure" },
+  { key: "procedurequantity", label: "Quantity" },
   { key: "dosageDescription", label: "Dosage" },
   { key: "comment", label: "Comment" },
-  { key: "cost", label: "Cost" },
-  { key: "payDate", label: "Pay Date" },
+  // { key: "cost", label: "Cost" },
+  // { key: "payDate", label: "Pay Date" },
   { key: "deliveryStatus", label: "Status" },
   { key: "actions", label: "Actions" },
 ]
