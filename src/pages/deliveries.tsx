@@ -247,7 +247,7 @@ export default function DeliveriesPage() {
     <>
       <PageHeader
         description="Manage and view delivery information"
-        title="Deliveries"
+        title="Medication Status"
       />
       <section className="px-2">
         <div className="flex justify-end mb-4 gap-2">
