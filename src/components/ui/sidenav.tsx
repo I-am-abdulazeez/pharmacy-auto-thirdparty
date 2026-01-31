@@ -9,6 +9,7 @@ import {
   DeliveryIcon,
   PayAutoLineIcon,
   PendingIcon,
+  AssignIcon,
 } from "@/components/icons";
 import { authStore } from "@/lib/store/app-store";
 
@@ -18,7 +19,15 @@ interface SideNavProps {
   onClose?: () => void;
 }
 
-const leadwayLinks = [
+interface NavLink {
+  name: string;
+  path: string;
+  icon: (props: any) => JSX.Element;
+  showCount: boolean;
+  countKey?: "enrolleecount" | "enrolleecountlagos";
+}
+
+const leadwayLinks: NavLink[] = [
   // {
   //   name: "Pharmacy",
   //   path: "/leadway/pharmacy",
@@ -28,24 +37,40 @@ const leadwayLinks = [
     name: "Enrollees",
     path: "/leadway/enrollees",
     icon: EnrolleeIcon,
+    showCount: false,
   },
   {
-    name: "Deliveries",
+    name: "Medication Status",
     path: "/leadway/deliveries",
     icon: DeliveryIcon,
+    showCount: false,
   },
 ];
 
-const providerLinks = [
+const providerLinks: NavLink[] = [
   {
     name: "Pay AutoLine",
     path: "/provider/pay-autoline",
     icon: PayAutoLineIcon,
+    showCount: false,
   },
   {
     name: "Pending Collections",
     path: "/provider/pending-collections",
     icon: PendingIcon,
+    showCount: false,
+  },
+  {
+    name: "Pending Deliveries",
+    path: "/provider/pending-deliveries",
+    icon: DeliveryIcon,
+    showCount: false,
+  },
+  {
+    name: "Reassign or Claim",
+    path: "/provider/reassign-or-claim",
+    icon: AssignIcon,
+    showCount: false,
   },
 ];
 
