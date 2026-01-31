@@ -69,6 +69,12 @@ interface PayAutoLineTableProps {
   onSelectionChange: (keys: Set<string>) => void;
   isSelectable?: boolean;
   onRefresh?: () => void;
+  enablePharmacyBenefitSelection?: boolean;
+  user?: any;
+  onPaySelected?: (
+    selectedDeliveries: Delivery[],
+    totalCost: number,
+  ) => Promise<void>;
 }
 
 const ROWS_PER_PAGE = 10;
@@ -85,6 +91,8 @@ export default function PayAutoLineTable({
   onSelectionChange,
   isSelectable = true,
   onRefresh,
+  enablePharmacyBenefitSelection = false,
+  user,
 }: PayAutoLineTableProps) {
   const [updatingQuantities, setUpdatingQuantities] = useState<
     Record<string, boolean>
@@ -100,6 +108,14 @@ export default function PayAutoLineTable({
   const [deliveryToDelete, setDeliveryToDelete] = useState<Delivery | null>(
     null,
   );
+
+  // Check if pharmacy benefit selection should be enabled
+  const isPharmacyBenefitUser =
+    enablePharmacyBenefitSelection &&
+    user?.surname === "PHARMACY BENEFIT PROGRAMME";
+
+  // Determine if table should show selection
+  const shouldShowSelection = isSelectable || isPharmacyBenefitUser;
 
   const rows = useMemo(
     () =>
@@ -523,8 +539,8 @@ export default function PayAutoLineTable({
             </div>
           ) : null
         }
-        selectedKeys={isSelectable ? selectedKeys : undefined}
-        selectionMode={isSelectable ? "multiple" : "none"}
+        selectedKeys={shouldShowSelection ? selectedKeys : undefined}
+        selectionMode={shouldShowSelection ? "multiple" : "none"}
         topContent={
           <div className="flex flex-col gap-2">
             <h3 className="text-lg font-semibold">Pickup Deliveries</h3>
@@ -533,6 +549,16 @@ export default function PayAutoLineTable({
                 <p className="text-sm text-gray-600">
                   Click - to reduce quantity (creates new unassigned pickup for
                   difference)
+                </p>
+                <p className="text-xs text-gray-500">
+                  Total: {deliveries.length} delivery(s)
+                  {selectedKeys.size > 0 && ` | Selected: ${selectedKeys.size}`}
+                </p>
+              </>
+            ) : isPharmacyBenefitUser ? (
+              <>
+                <p className="text-sm text-gray-600">
+                  Select deliveries to mark as paid
                 </p>
                 <p className="text-xs text-gray-500">
                   Total: {deliveries.length} delivery(s)
@@ -550,7 +576,7 @@ export default function PayAutoLineTable({
           </div>
         }
         onSelectionChange={
-          isSelectable
+          shouldShowSelection
             ? (keys) => {
                 if (keys === "all") {
                   onSelectionChange(new Set(rows.map((r) => r.key)));
