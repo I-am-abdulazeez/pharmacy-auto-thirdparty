@@ -14,9 +14,12 @@ export interface ProviderPickup {
   EnrolleeName: string;
   scheme_type: string;
   Pharmacyname: string;
-  inputteddate: string;
   EnrolleeId: string;
+  inputteddate: string;
+  paydate: string;
   TimeUsed: string;
+  EntryNumbers: string;
+  assignedrider: string;
 }
 
 export const initialFormState = {
@@ -79,7 +82,11 @@ export const deliveryStore = chunk({
   pendingApprovalList: [] as PendingApproval[],
   showDetailView: false,
   providerPickups: [] as ProviderPickup[], // New field for provider pickups summary
+  providerDeliveries: [] as ProviderPickup[], // New field for provider deliveries summary
+  reassignDeliveries: [] as ProviderPickup[], // New field for reassign deliveries
   pickupDetails: [] as Delivery[], // Field for pickup details
+  providerDetails: [] as Delivery[], // Field for delivery details
+  reassignDetails: [] as Delivery[], // Field for reassign details
   isLoading: false,
   isLoadingDetails: false, // New field for details loading state
   detailsError: null as string | null, // New field for details error
