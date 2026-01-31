@@ -6,6 +6,19 @@ import { API_URL, transformApiResponse } from "../utils";
 
 import { Delivery } from "@/types";
 
+
+export interface ProviderPickup {
+  EnrolleeName: string;
+  scheme_type: string;
+  Pharmacyname: string;
+  EnrolleeId: string;
+  inputteddate: string;
+  paydate: string;
+  TimeUsed: string;
+  EntryNumbers: string;
+  assignedrider: string;
+}
+
 /**
  * Fetches deliveries based on various filter criteria
  * @param enrolleeId - Enrollee ID to filter by (can be ID or name)
@@ -84,83 +97,6 @@ export const getDeliveries = async (
   }
 };
 
-/**
- * Creates a new delivery
- * @param deliveryData - Delivery data containing array of deliveries
- * @param skipNavigation - Whether to skip navigation after creation
- */
-export const createDelivery = async (
-  deliveryData: { Deliveries: Delivery[]; ConfirmDuplicates?: boolean },
-  skipNavigation: boolean = false
-): Promise<any> => {
-  try {
-    deliveryStore.set((state) => ({
-      ...state,
-      isSubmitting: true,
-    }));
-
-    const apiUrl = `${API_URL}/PharmacyDelivery/InsertPharmacyPickup`;
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(deliveryData),
-    });
-
-    const data = await response.json();
-
-    deliveryStore.set((state) => ({
-      ...state,
-      isSubmitting: false,
-    }));
-
-    if (!response.ok) {
-      return {
-        status: response.status,
-        result: data,
-        ReturnMessage:
-          data.ReturnMessage ||
-          `Failed to create delivery: ${response.status} ${response.statusText}`,
-        Warnings: data.Warnings || [],
-        Errors: data.Errors || [],
-      };
-    }
-
-    // Refresh deliveries and navigate if not skipping
-    if (!skipNavigation) {
-      const enrolleeId = deliveryData.Deliveries[0]?.EnrolleeId;
-
-      if (enrolleeId) {
-        await getDeliveries(enrolleeId);
-      }
-    }
-
-    return {
-      status: response.status,
-      result: data,
-      ReturnMessage: data.ReturnMessage || "Delivery created successfully",
-      Warnings: data.Warnings || [],
-      Errors: data.Errors || [],
-    };
-  } catch (error) {
-    deliveryStore.set((state) => ({
-      ...state,
-      isSubmitting: false,
-    }));
-
-    toast.error(`Create delivery error: ${error}`);
-
-    return {
-      status: 0,
-      result: null,
-      ReturnMessage: "Failed to connect to the server",
-      Warnings: [],
-      Errors: [],
-    };
-  }
-};
 
 /**
  * Fetches provider pickups (summary list for provider portal)
@@ -247,6 +183,10 @@ export const getPickupDetails = async (
     params.append("enrolleeid", enrolleeId);
     params.append("showall", String(showall));
 
+    if (enrolleeId) {
+      params.append("enrolleeid", enrolleeId);
+    }
+
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
 
     const response = await fetch(apiUrl);
@@ -290,6 +230,342 @@ export const getPickupDetails = async (
   }
 };
 
+export const getReassignDeliveries = async (
+  pharmacyid: string,
+  showall: boolean = false,
+  enrolleeId: string = "",
+  afterpack: number = 2
+): Promise<any> => {
+  try {
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoading: true,
+      error: null,
+    }));
+
+    const params = new URLSearchParams();
+
+    params.append("pharmacyid", pharmacyid);
+    params.append("showall", String(showall));
+    params.append("afterpack", String(afterpack));
+
+    // NEW: Add enrolleeId parameter if provided
+    if (enrolleeId) {
+      params.append("enrolleeid", enrolleeId);
+    }
+
+    const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment_Provider?${params.toString()}`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.result) {
+      deliveryStore.set((state) => ({
+        ...state,
+        reassignDeliveries: Array.isArray(data.result) ? data.result : [data.result],
+        isLoading: false,
+        error: null,
+      }));
+
+      return data;
+    } else {
+      throw new Error(data.ReturnMessage || "Failed to fetch deliveries");
+    }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to connect to the server";
+
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoading: false,
+      error: errorMessage,
+      reassignDeliveries: [],
+    }));
+
+    throw error;
+  }
+};
+
+/**
+ * Fetches pickup details for a specific enrollee
+ * @param pharmacyid - Pharmacy ID
+ * @param enrolleeId - Enrollee ID
+ * @param showall - Whether to show all deliveries
+ */
+export const getReassignDetails = async (
+  pharmacyid: string,
+  enrolleeId: string,
+  showall: boolean = false,
+  afterpack: number = 1
+): Promise<any> => {
+  try {
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoadingDetails: true,
+      detailsError: null,
+    }));
+
+    const params = new URLSearchParams();
+
+    params.append("pharmacyid", pharmacyid);
+    params.append("enrolleeid", enrolleeId);
+    params.append("showall", String(showall));
+    params.append("afterpack", String(afterpack));
+
+    const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.result) {
+      const transformedDeliveries = Array.isArray(data.result)
+        ? data.result.map(transformApiResponse)
+        : [transformApiResponse(data.result)];
+
+      deliveryStore.set((state) => ({
+        ...state,
+        reassignDetails: transformedDeliveries,
+        isLoadingDetails: false,
+        detailsError: null,
+      }));
+
+      return data;
+    } else {
+      throw new Error(data.ReturnMessage || "Failed to fetch delivery details");
+    }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to connect to the server";
+
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoadingDetails: false,
+      detailsError: errorMessage,
+      reassignDetails: [],
+    }));
+
+    throw error;
+  }
+};
+
+export const getProviderDeliveries = async (
+  pharmacyid: string,
+  showall: boolean = false,
+  afterpack: number = 1
+): Promise<any> => {
+  try {
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoading: true,
+      error: null,
+    }));
+
+    const params = new URLSearchParams();
+
+    params.append("pharmacyid", pharmacyid);
+    params.append("showall", String(showall));
+    params.append("afterpack", String(afterpack));
+
+    const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment_Provider?${params.toString()}`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.result) {
+      // Store as providerPickups (different from deliveries)
+      deliveryStore.set((state) => ({
+        ...state,
+        providerDeliveries: Array.isArray(data.result) ? data.result : [data.result],
+        isLoading: false,
+        error: null,
+      }));
+
+      return data;
+    } else {
+      throw new Error(data.ReturnMessage || "Failed to fetch pickups");
+    }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to connect to the server";
+
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoading: false,
+      error: errorMessage,
+      providerDeliveries: [],
+    }));
+
+    throw error;
+  }
+};
+
+/**
+ * Fetches pickup details for a specific enrollee
+ * @param pharmacyid - Pharmacy ID
+ * @param enrolleeId - Enrollee ID
+ * @param showall - Whether to show all deliveries
+ */
+export const getDeliveriesDetails = async (
+  pharmacyid: string,
+  enrolleeId: string,
+  showall: boolean = false,
+  afterpack: number = 1
+): Promise<any> => {
+  try {
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoadingDetails: true,
+      detailsError: null,
+    }));
+
+    const params = new URLSearchParams();
+
+    params.append("pharmacyid", pharmacyid);
+    params.append("enrolleeid", enrolleeId);
+    params.append("showall", String(showall));
+    params.append("afterpack", String(afterpack));
+
+    const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.result) {
+      const transformedDeliveries = Array.isArray(data.result)
+        ? data.result.map(transformApiResponse)
+        : [transformApiResponse(data.result)];
+
+      deliveryStore.set((state) => ({
+        ...state,
+        providerDetails: transformedDeliveries,
+        isLoadingDetails: false,
+        detailsError: null,
+      }));
+
+      return data;
+    } else {
+      throw new Error(data.ReturnMessage || "Failed to fetch pickup details");
+    }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to connect to the server";
+
+    deliveryStore.set((state) => ({
+      ...state,
+      isLoadingDetails: false,
+      detailsError: errorMessage,
+      providerDetails: [],
+    }));
+
+    throw error;
+  }
+};
+
+/**
+ * Creates a new delivery
+ * @param deliveryData - Delivery data containing array of deliveries
+ * @param skipNavigation - Whether to skip navigation after creation
+ */
+export const createDelivery = async (
+  deliveryData: { Deliveries: Delivery[]; ConfirmDuplicates?: boolean },
+  skipNavigation: boolean = false
+): Promise<any> => {
+  try {
+    deliveryStore.set((state) => ({
+      ...state,
+      isSubmitting: true,
+    }));
+
+    const apiUrl = `${API_URL}/PharmacyDelivery/InsertPharmacyPickup`;
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(deliveryData),
+    });
+
+    const data = await response.json();
+
+    deliveryStore.set((state) => ({
+      ...state,
+      isSubmitting: false,
+    }));
+
+    if (!response.ok) {
+      return {
+        status: response.status,
+        result: data,
+        ReturnMessage:
+          data.ReturnMessage ||
+          `Failed to create delivery: ${response.status} ${response.statusText}`,
+        Warnings: data.Warnings || [],
+        Errors: data.Errors || [],
+      };
+    }
+
+    // Refresh deliveries and navigate if not skipping
+    if (!skipNavigation) {
+      const enrolleeId = deliveryData.Deliveries[0]?.EnrolleeId;
+
+      if (enrolleeId) {
+        await getDeliveries(enrolleeId);
+      }
+    }
+
+    return {
+      status: response.status,
+      result: data,
+      ReturnMessage: data.ReturnMessage || "Delivery created successfully",
+      Warnings: data.Warnings || [],
+      Errors: data.Errors || [],
+    };
+  } catch (error) {
+    deliveryStore.set((state) => ({
+      ...state,
+      isSubmitting: false,
+    }));
+
+    toast.error(`Create delivery error: ${error}`);
+
+    return {
+      status: 0,
+      result: null,
+      ReturnMessage: "Failed to connect to the server",
+      Warnings: [],
+      Errors: [],
+    };
+  }
+};
 
 /**
  * Updates an existing delivery
