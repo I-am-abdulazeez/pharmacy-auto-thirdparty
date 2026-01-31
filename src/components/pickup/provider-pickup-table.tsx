@@ -12,11 +12,16 @@ import { Pagination } from "@heroui/pagination";
 import { Spinner } from "@heroui/spinner";
 
 import { formatDate } from "@/lib/utils";
-import { ProviderPickup } from "@/lib/store/delivery-store";
+import { ProviderPickup } from "@/lib/services/delivery-service";
 
 interface ProviderPickupsTableProps {
   pickups: ProviderPickup[];
-  onRowClick: (enrolleeId: string) => void;
+  onRowClick?: (enrolleeId: string) => void;
+  // NEW: Optional selection props
+  enableSelection?: boolean;
+  selectedKeys?: Set<string>;
+  onSelectionChange?: (keys: Set<string>) => void;
+  columns?: { key: string; label: string }[];
 }
 
 const COLUMNS = [
@@ -33,6 +38,10 @@ const ROWS_PER_PAGE = 10;
 export default function ProviderPickupsTable({
   pickups,
   onRowClick,
+  enableSelection = false,
+  selectedKeys = new Set(),
+  onSelectionChange,
+  columns,
 }: ProviderPickupsTableProps) {
   const [page, setPage] = useState(1);
   const [loadingRow, setLoadingRow] = useState<string | null>(null);
@@ -47,6 +56,7 @@ export default function ProviderPickupsTable({
         Pharmacyname: pickup.Pharmacyname || "",
         TimeUsed: pickup.TimeUsed || "",
         inputteddate: formatDate(pickup.inputteddate) || "",
+        assignedrider: pickup.assignedrider || "",
         original: pickup,
       })),
     [pickups],
@@ -62,6 +72,8 @@ export default function ProviderPickupsTable({
   }, [page, rows]);
 
   const handleRowClick = (enrolleeId: string) => {
+    if (!onRowClick) return;
+
     setLoadingRow(enrolleeId);
     onRowClick(enrolleeId);
     // Loading state will be cleared by parent component
@@ -118,6 +130,12 @@ export default function ProviderPickupsTable({
         return (
           <span className="text-sm whitespace-nowrap">{item.inputteddate}</span>
         );
+      case "assignedrider":
+        return (
+          <span className="text-sm whitespace-nowrap">
+            {item.assignedrider || "Unassigned"}
+          </span>
+        );
       default:
         return item[columnKey];
     }
@@ -166,24 +184,35 @@ export default function ProviderPickupsTable({
           </div>
         ) : null
       }
-      className="cursor-pointer"
-      selectionMode="single"
-      onRowAction={(key) => {
-        const item = rows.find((r) => r.key === key);
+      className={onRowClick ? "cursor-pointer" : ""}
+      // NEW: Conditional selection mode
+      selectedKeys={enableSelection ? selectedKeys : undefined}
+      selectionMode={
+        enableSelection ? "multiple" : onRowClick ? "single" : "none"
+      }
+      onRowAction={
+        onRowClick
+          ? (key) => {
+              const item = rows.find((r) => r.key === key);
 
-        if (item && !loadingRow) {
-          handleRowClick(item.EnrolleeId);
-        }
-      }}
+              if (item && !loadingRow) {
+                handleRowClick(item.EnrolleeId);
+              }
+            }
+          : undefined
+      }
+      onSelectionChange={
+        enableSelection ? (onSelectionChange as any) : undefined
+      }
     >
-      <TableHeader columns={COLUMNS}>
+      <TableHeader columns={columns || COLUMNS}>
         {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
       </TableHeader>
       <TableBody items={paginatedRows}>
         {(item) => (
           <TableRow
             key={item.key}
-            className={`hover:bg-gray-50 ${loadingRow === item.EnrolleeId ? "opacity-60" : ""}`}
+            className={`${onRowClick ? "hover:bg-gray-50" : ""} ${loadingRow === item.EnrolleeId ? "opacity-60" : ""}`}
           >
             {(columnKey) => (
               <TableCell>{renderCell(item, String(columnKey))}</TableCell>
