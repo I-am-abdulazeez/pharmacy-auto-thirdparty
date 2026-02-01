@@ -140,6 +140,7 @@ export default function PayAutoLinePage() {
         pharmacyId,
         totalCost,
         enrolleeIdFromDelivery,
+        0,
       );
 
       toast.success(
