@@ -22,7 +22,7 @@ export default function SelectStates({
 
   const currentValue = value !== undefined ? value : appState.stateId;
   const [selectedState, setSelectedState] = useState<Set<string>>(
-    currentValue ? new Set([currentValue]) : new Set()
+    currentValue ? new Set([currentValue]) : new Set(),
   );
 
   const states = data || [];
@@ -33,10 +33,10 @@ export default function SelectStates({
       setSelectedState(value ? new Set([value]) : new Set());
     } else {
       setSelectedState(
-        appState.stateId ? new Set([appState.stateId]) : new Set()
+        appState.stateId ? new Set([appState.stateId]) : new Set(),
       );
     }
-  }, [value, appState.stateId]);
+  }, [value, appState.stateId, data]);
 
   // Set default state if needed (only when not controlled and no onChange)
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function SelectStates({
       const newStateId = selectedArray[0] || "";
 
       const selectedStateObj = states.find(
-        (state: State) => state.Value === newStateId
+        (state: State) => state.Value === newStateId,
       );
       const stateName = selectedStateObj ? selectedStateObj.Text : "";
 
@@ -80,7 +80,7 @@ export default function SelectStates({
         }
       }
     },
-    [currentValue, states, onChange, setAppState]
+    [currentValue, states, onChange, setAppState],
   );
 
   if (error) {
