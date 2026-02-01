@@ -119,6 +119,7 @@ export default function PendingCollectionsPage() {
           pharmacyId,
           totalCost,
           enrolleeIdFromDelivery,
+          1,
         );
 
         toast.success(
