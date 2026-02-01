@@ -12,7 +12,8 @@ export const payAutoLine = async (
   entryNumbers: string[],
   pharmacyId: string | number,
   totalCost: number,
-  enrolleeId: string
+  enrolleeId: string,
+  isfrompbm: number
 ): Promise<any> => {
   try {
     const payload = {
@@ -20,6 +21,7 @@ export const payAutoLine = async (
       PharmacyId: Number(pharmacyId),
       Cost: totalCost,
       EnrolleeId: enrolleeId,
+      isfrompbm
     };
 
     const response = await fetch(`${API_URL}/PharmacyDelivery/PayAutoline`, {
