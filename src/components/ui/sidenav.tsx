@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { Button } from "@heroui/button";
+import { useChunkValue } from "stunk/react";
 
 import {
   // PharmacyIcon,
@@ -12,6 +13,7 @@ import {
   AssignIcon,
 } from "@/components/icons";
 import { authStore } from "@/lib/store/app-store";
+import { API_URL } from "@/lib/utils";
 
 interface SideNavProps {
   currentPath: string;
@@ -24,7 +26,12 @@ interface NavLink {
   path: string;
   icon: (props: any) => JSX.Element;
   showCount: boolean;
-  countKey?: "enrolleecount" | "enrolleecountlagos";
+  countKey?:
+    | "enrolleecount"
+    | "enrolleecountlagos"
+    | "PendingCollections"
+    | "PendingDeliveriesPage"
+    | "ReassignOrClaim";
 }
 
 const leadwayLinks: NavLink[] = [
@@ -32,6 +39,7 @@ const leadwayLinks: NavLink[] = [
   //   name: "Pharmacy",
   //   path: "/leadway/pharmacy",
   //   icon: PharmacyIcon,
+  //   showCount: false,
   // },
   {
     name: "Enrollees",
@@ -58,19 +66,22 @@ const providerLinks: NavLink[] = [
     name: "Pending Collections",
     path: "/provider/pending-collections",
     icon: PendingIcon,
-    showCount: false,
+    showCount: true,
+    countKey: "PendingCollections",
   },
   {
     name: "Pending Deliveries",
     path: "/provider/pending-deliveries",
     icon: DeliveryIcon,
-    showCount: false,
+    showCount: true,
+    countKey: "PendingDeliveriesPage",
   },
   {
     name: "Reassign or Claim",
     path: "/provider/reassign-or-claim",
     icon: AssignIcon,
-    showCount: false,
+    showCount: true,
+    countKey: "ReassignOrClaim",
   },
 ];
 
@@ -80,9 +91,46 @@ export default function SideNav({
   onClose,
 }: SideNavProps) {
   const navigate = useNavigate();
+  const { user } = useChunkValue(authStore);
+
+  // Provider counts
+  const [providerCounts, setProviderCounts] = useState<{
+    PendingCollections: number;
+    PendingDeliveriesPage: number;
+    ReassignOrClaim: number;
+  } | null>(null);
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navLinks = userType === "leadway" ? leadwayLinks : providerLinks;
+
+  const pharmacyId = user?.provider_id?.toString() || "";
+
+  // Fetch provider delivery counts
+  useEffect(() => {
+    const fetchProviderCounts = async () => {
+      if (userType === "provider" && pharmacyId) {
+        try {
+          const response = await fetch(
+            `${API_URL}/Pharmacy/GetCountPending_Autopayment_provider?pharmacyid=${pharmacyId}`,
+          );
+          const data = await response.json();
+
+          if (data.status === 200 && data.result && data.result.length > 0) {
+            setProviderCounts(data.result[0]);
+          }
+        } catch (error) {
+          throw new Error((error as Error).message);
+        }
+      }
+    };
+
+    fetchProviderCounts();
+
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchProviderCounts, 30000);
+
+    return () => clearInterval(interval);
+  }, [userType, pharmacyId]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -113,6 +161,20 @@ export default function SideNav({
     } catch (error) {
       toast.error(`Error logging out:  ${(error as Error).message}`);
       setIsLoggingOut(false);
+    }
+  };
+
+  // Get count based on countKey
+  const getCount = (countKey?: string): number | null => {
+    switch (countKey) {
+      case "PendingCollections":
+        return providerCounts?.PendingCollections ?? null;
+      case "PendingDeliveriesPage":
+        return providerCounts?.PendingDeliveriesPage ?? null;
+      case "ReassignOrClaim":
+        return providerCounts?.ReassignOrClaim ?? null;
+      default:
+        return null;
     }
   };
 
@@ -159,6 +221,9 @@ export default function SideNav({
         {navLinks.map((link) => {
           const isActive = currentPath.startsWith(link.path);
           const Icon = link.icon;
+          const count = getCount(link.countKey);
+
+          const showBadge = link.showCount && count !== null && count > 0;
 
           return (
             <Link
@@ -187,6 +252,7 @@ export default function SideNav({
                 }`}
               >
                 {link.name}
+                {showBadge && ` (${count})`}
               </span>
 
               {/* Active right accent */}
