@@ -261,7 +261,7 @@ export default function PendingCollectionsPage() {
                         handlePaySelected(selectedDeliveries, totalCost);
                       }}
                     >
-                      Mark as Paid ({selectedKeys.size})
+                      Mark as Pack ({selectedKeys.size})
                     </Button>
                   )}
 
