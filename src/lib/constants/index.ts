@@ -60,7 +60,7 @@ export const DELIVERY_COLUMNS = [
   { key: "diagnosisName", label: "Diagnosis" },
   { key: "procedureName", label: "Procedure" },
   { key: "procedurequantity", label: "Quantity" },
-  { key: "dosageDescription", label: "Dosage" },
+  // { key: "dosageDescription", label: "Dosage" },
   { key: "comment", label: "Comment" },
   // { key: "cost", label: "Cost" },
   // { key: "payDate", label: "Pay Date" },
