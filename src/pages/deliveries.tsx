@@ -299,7 +299,7 @@ export default function DeliveriesPage() {
           backdrop="blur"
           isDismissable={false}
           isOpen={showModal}
-          scrollBehavior="outside"
+          scrollBehavior="inside"
           shouldCloseOnInteractOutside={(element) => {
             return !element.className.includes("heroui-select");
           }}
