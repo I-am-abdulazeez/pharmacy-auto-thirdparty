@@ -6,6 +6,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
+import { Selection } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/select";
 import { Spinner } from "@heroui/spinner";
@@ -40,7 +41,7 @@ interface ProviderPickup {
 
 interface AssignRiderModalProps {
   isOpen: boolean;
-  selectedKeys: Set<string>;
+  selectedKeys: Selection;
   pickups: ProviderPickup[]; // NEW: Pass the actual pickup data
   onClose: () => void;
   onAssignmentComplete: () => void;
@@ -106,7 +107,7 @@ export default function AssignRiderModal({
       const selectedPickups = pickups.filter((pickup, index) => {
         const key = `${pickup.EnrolleeId}-${index}`;
 
-        return selectedKeys.has(key);
+        return (selectedKeys as Set<String>).has(key);
       });
 
       // Parse EntryNumbers from each selected pickup and flatten into single array
@@ -186,7 +187,8 @@ export default function AssignRiderModal({
                 <>
                   <div className="mb-4">
                     <p className="text-sm text-gray-600">
-                      Selected deliveries: <strong>{selectedKeys.size}</strong>
+                      Selected deliveries:{" "}
+                      <strong>{(selectedKeys as Set<String>).size}</strong>
                     </p>
                   </div>
 
