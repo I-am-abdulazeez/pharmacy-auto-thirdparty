@@ -7,12 +7,14 @@ import {
   TableRow,
   TableCell,
   getKeyValue,
+  Selection,
 } from "@heroui/table";
 import { Badge } from "@heroui/badge";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
 import { Pagination } from "@heroui/pagination";
 import { Tooltip } from "@heroui/tooltip";
+import { Input } from "@heroui/input";
 import {
   Modal,
   ModalContent,
@@ -22,14 +24,20 @@ import {
 } from "@heroui/modal";
 import toast from "react-hot-toast";
 
-import { editDelivery, createDelivery } from "@/lib/services/delivery-service";
+import {
+  editDelivery,
+  createAcuteDelivery,
+} from "@/lib/services/delivery-service";
 import { AUTOLINE_COLUMNS } from "@/lib/constants";
-import { API_URL } from "@/lib/utils";
+import { API_URL, formatDate } from "@/lib/utils";
+import { deliveryActions } from "@/lib/store/delivery-store";
+import { EditIcon, DeleteIcon, EyeIcon, Check } from "@/components/icons";
 
 interface Delivery {
   EntryNo?: number;
   EnrolleeName?: string;
   EnrolleeId?: string;
+  EnrolleeEmail?: string;
   EnrolleeAge?: number;
   SchemeId?: string;
   SchemeName?: string;
@@ -48,8 +56,11 @@ interface Delivery {
   deliveryaddress?: string;
   cost?: string;
   scheme_type?: string;
-  ispaid?: boolean | null;
+  ispaid?: number | null;
+  isClaimed?: number | null;
   paydate?: string | null;
+  codeexpirydate?: string;
+  inputteddate?: string;
   DeliveryFrequency?: string;
   DelStartDate?: string | null;
   NextDeliveryDate?: string | null;
@@ -61,12 +72,15 @@ interface Delivery {
   pharmacyid?: string;
   PharmacyName?: string;
   email?: string;
+  memberaddress?: string;
+  assignedRider?: string | null;
+  IsDelivered?: boolean;
 }
 
 interface PayAutoLineTableProps {
   deliveries: Delivery[];
-  selectedKeys: Set<string>;
-  onSelectionChange: (keys: Set<string>) => void;
+  selectedKeys: Selection;
+  onSelectionChange: (keys: Selection) => void;
   isSelectable?: boolean;
   onRefresh?: () => void;
   enablePharmacyBenefitSelection?: boolean;
@@ -75,15 +89,13 @@ interface PayAutoLineTableProps {
     selectedDeliveries: Delivery[],
     totalCost: number,
   ) => Promise<void>;
+  // New props for PendingCollections page features
+  enableEditActions?: boolean;
+  enableViewDetails?: boolean;
+  enableCostEdit?: boolean;
 }
 
 const ROWS_PER_PAGE = 10;
-
-// Add actions column to the existing columns
-const COLUMNS_WITH_ACTIONS = [
-  ...AUTOLINE_COLUMNS,
-  { key: "actions", label: "Actions" },
-];
 
 export default function PayAutoLineTable({
   deliveries,
@@ -93,11 +105,15 @@ export default function PayAutoLineTable({
   onRefresh,
   enablePharmacyBenefitSelection = false,
   user,
+  enableEditActions = false,
+  enableViewDetails = false,
+  enableCostEdit = false,
 }: PayAutoLineTableProps) {
   const [updatingQuantities, setUpdatingQuantities] = useState<
     Record<string, boolean>
   >({});
   const [deletingRows, setDeletingRows] = useState<Record<string, boolean>>({});
+  const [isEditing, setIsEditing] = useState<Record<string, boolean>>({});
   const [localQuantities, setLocalQuantities] = useState<
     Record<string, number>
   >({});
@@ -109,31 +125,87 @@ export default function PayAutoLineTable({
     null,
   );
 
+  // View details modal state
+  const [viewDetailsModal, setViewDetailsModal] = useState<{
+    isOpen: boolean;
+    delivery: Delivery | null;
+  }>({ isOpen: false, delivery: null });
+
+  // Cost edit modal state
+  const [costEditModal, setCostEditModal] = useState<{
+    isOpen: boolean;
+    delivery: Delivery | null;
+    newCost: string;
+  }>({ isOpen: false, delivery: null, newCost: "" });
+  const [isUpdatingCost, setIsUpdatingCost] = useState(false);
+
   // Check if pharmacy benefit selection should be enabled
   const isPharmacyBenefitUser =
     enablePharmacyBenefitSelection &&
     user?.surname === "PHARMACY BENEFIT PROGRAMME";
 
   // Determine if table should show selection
+  // Selection should be enabled when:
+  // 1. isSelectable is true (for quantity adjustment and general selection)
+  // 2. isPharmacyBenefitUser is true (for marking as paid)
   const shouldShowSelection = isSelectable || isPharmacyBenefitUser;
+
+  // Determine which columns to show based on enabled features
+  const columns = useMemo(() => {
+    const baseColumns = [...AUTOLINE_COLUMNS];
+
+    // Always add actions column
+    baseColumns.push({ key: "actions", label: "Actions" });
+
+    return baseColumns;
+  }, []);
 
   const rows = useMemo(
     () =>
-      deliveries.map((delivery) => ({
-        key: String(delivery.EntryNo || 0),
-        original: delivery,
-        EnrolleeName: delivery.EnrolleeName || "N/A",
-        procedurename: delivery.ProcedureLines?.[0]?.ProcedureName || "N/A",
-        procedurequantity:
-          localQuantities[String(delivery.EntryNo)] ??
-          delivery.ProcedureLines?.[0]?.ProcedureQuantity ??
-          1,
-        phonenumber: delivery.phonenumber || "N/A",
-        cost: delivery.cost || delivery.ProcedureLines?.[0]?.cost || "N/A",
-        scheme_type: delivery.scheme_type || "N/A",
-        ispaid: delivery.ispaid ?? null,
-        paydate: delivery.paydate || null,
-      })),
+      deliveries.map((delivery) => {
+        // Determine delivery status
+        let deliveryStatus = "Pending";
+
+        const isPaid = delivery.ispaid === 1;
+        const isClaimed = delivery.isClaimed === 1;
+        const hasAssignedRider =
+          delivery.assignedRider !== null &&
+          delivery.assignedRider !== undefined;
+        const isPharmacyBenefit =
+          delivery.PharmacyName?.toLowerCase().includes("pharmacy benefit");
+
+        if (!isPaid && !isClaimed) {
+          deliveryStatus = "Pending";
+        } else if (isPaid && !isClaimed && !hasAssignedRider) {
+          deliveryStatus = "Packed";
+        } else if (isPaid && !isClaimed && hasAssignedRider) {
+          deliveryStatus = "Assigned to Rider";
+        } else if (isPaid && isClaimed && !isPharmacyBenefit) {
+          deliveryStatus = "Picked up";
+        } else if (isPaid && isClaimed && isPharmacyBenefit) {
+          deliveryStatus = "Delivered";
+        }
+
+        return {
+          key: String(delivery.EntryNo || 0),
+          original: delivery,
+          EnrolleeName: delivery.EnrolleeName || "N/A",
+          procedurename: delivery.ProcedureLines?.[0]?.ProcedureName || "N/A",
+          procedurequantity:
+            localQuantities[String(delivery.EntryNo)] ??
+            delivery.ProcedureLines?.[0]?.ProcedureQuantity ??
+            1,
+          phonenumber: delivery.phonenumber || "N/A",
+          cost: delivery.cost || delivery.ProcedureLines?.[0]?.cost || "N/A",
+          scheme_type: delivery.scheme_type || "N/A",
+          ispaid: delivery.ispaid ?? null,
+          paydate: delivery.paydate || null,
+          deliveryStatus,
+          actions: {
+            isDelivered: delivery.IsDelivered ?? false,
+          },
+        };
+      }),
     [deliveries, localQuantities],
   );
 
@@ -250,7 +322,7 @@ export default function PayAutoLineTable({
           cost: delivery.cost || "0",
         };
 
-        const createResponse = await createDelivery(
+        const createResponse = await createAcuteDelivery(
           {
             Deliveries: [newDelivery],
             ConfirmDuplicates: false,
@@ -318,7 +390,7 @@ export default function PayAutoLineTable({
       return;
     }
 
-    // Open confirmation modal instead of window.confirm
+    // Open confirmation modal
     setDeliveryToDelete(delivery);
     setShowDeleteModal(true);
   }, []);
@@ -382,9 +454,98 @@ export default function PayAutoLineTable({
     setDeliveryToDelete(null);
   }, []);
 
+  // Handle edit delivery
+  const handleEdit = async (delivery: Delivery) => {
+    const key = String(delivery.EntryNo);
+
+    try {
+      setIsEditing((prev) => ({ ...prev, [key]: true }));
+      deliveryActions.openModal();
+      deliveryActions.setFormData(delivery);
+    } catch (error) {
+      toast.error(
+        `Failed to load delivery for editing: ${(error as Error).message}`,
+      );
+    } finally {
+      setIsEditing((prev) => ({ ...prev, [key]: false }));
+    }
+  };
+
+  // Handle view details click
+  const handleViewDetailsClick = (delivery: Delivery) => {
+    setViewDetailsModal({ isOpen: true, delivery });
+  };
+
+  // Handle cost edit click
+  const handleCostEditClick = (delivery: Delivery) => {
+    setCostEditModal({
+      isOpen: true,
+      delivery,
+      newCost: delivery.cost !== "N/A" ? String(delivery.cost) : "",
+    });
+  };
+
+  // Handle cost update
+  const handleCostUpdate = async () => {
+    if (!costEditModal.delivery) return;
+
+    const entryNo = costEditModal.delivery.EntryNo;
+    const newCostValue = parseFloat(costEditModal.newCost);
+
+    // Validation
+    if (!entryNo) {
+      toast.error("Entry number is missing");
+
+      return;
+    }
+
+    if (isNaN(newCostValue) || newCostValue < 0) {
+      toast.error("Please enter a valid cost amount");
+
+      return;
+    }
+
+    setIsUpdatingCost(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/Pharmacy/updatecostautoAutopayment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            entryno: entryNo,
+            cost: newCostValue,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to update cost: ${response.statusText}`);
+      }
+
+      toast.success("Cost updated successfully!");
+
+      // Refresh the table
+      if (onRefresh) {
+        onRefresh();
+      }
+
+      // Close modal
+      setCostEditModal({ isOpen: false, delivery: null, newCost: "" });
+    } catch (error) {
+      toast.error(`Failed to update cost: ${(error as Error).message}`);
+    } finally {
+      setIsUpdatingCost(false);
+    }
+  };
+
   const renderCell = (item: any, columnKey: string) => {
     const isUpdating = updatingQuantities[item.key];
     const isDeleting = deletingRows[item.key];
+    const isEditingRow = isEditing[item.key];
 
     switch (columnKey) {
       case "EnrolleeName":
@@ -430,7 +591,7 @@ export default function PayAutoLineTable({
           );
         }
 
-        // When isSelectable is false, just show the quantity badge (no buttons)
+        // When isSelectable is false, just show the quantity badge
         return (
           <div className="flex items-center justify-center">
             <span className="text-sm font-medium bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
@@ -441,6 +602,26 @@ export default function PayAutoLineTable({
       case "phonenumber":
         return <span className="text-sm">{item.phonenumber}</span>;
       case "cost":
+        if (enableCostEdit) {
+          return (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium whitespace-nowrap">
+                {item.cost && item.cost !== "N/A" ? `₦${item.cost}` : "N/A"}
+              </span>
+              <Button
+                isIconOnly
+                aria-label={`Edit cost for ${item.EnrolleeName}`}
+                color="primary"
+                size="sm"
+                variant="light"
+                onPress={() => handleCostEditClick(item.original)}
+              >
+                <EditIcon size={14} />
+              </Button>
+            </div>
+          );
+        }
+
         return (
           <span className="text-sm font-medium">
             {item.cost && item.cost !== "N/A" ? `₦${item.cost}` : "N/A"}
@@ -458,9 +639,53 @@ export default function PayAutoLineTable({
             {item.ispaid ? "Paid" : "Pending"}
           </Badge>
         );
+      case "deliveryStatus":
+        const getBadgeColor = () => {
+          if (item.deliveryStatus === "Delivered") return "success";
+          if (item.deliveryStatus === "Picked up") return "success";
+          if (item.deliveryStatus === "Assigned to Rider") return "primary";
+          if (item.deliveryStatus === "Packed") return "secondary";
+
+          return "warning"; // Pending
+        };
+
+        return <Badge color={getBadgeColor()}>{item.deliveryStatus}</Badge>;
       case "actions":
         return (
           <div className="flex items-center justify-center gap-2">
+            {/* View Details Icon */}
+            {enableViewDetails && (
+              <Tooltip color="primary" content="View details">
+                <Button
+                  isIconOnly
+                  color="primary"
+                  size="sm"
+                  variant="flat"
+                  onPress={() => handleViewDetailsClick(item.original)}
+                >
+                  <EyeIcon size={14} />
+                </Button>
+              </Tooltip>
+            )}
+
+            {/* Edit Icon */}
+            {enableEditActions && (
+              <Tooltip color="default" content="Edit delivery">
+                <Button
+                  isIconOnly
+                  color="default"
+                  isDisabled={item.actions.isDelivered || isEditingRow}
+                  isLoading={isEditingRow}
+                  size="sm"
+                  variant="flat"
+                  onPress={() => handleEdit(item.original)}
+                >
+                  {!isEditingRow && <EditIcon size={14} />}
+                </Button>
+              </Tooltip>
+            )}
+
+            {/* Delete Icon */}
             <Tooltip color="danger" content="Delete delivery">
               <Button
                 isIconOnly
@@ -471,21 +696,7 @@ export default function PayAutoLineTable({
                 variant="light"
                 onPress={() => handleDeleteDelivery(item.original)}
               >
-                {!isDeleting && (
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                    />
-                  </svg>
-                )}
+                {!isDeleting && <DeleteIcon size={14} />}
               </Button>
             </Tooltip>
           </div>
@@ -552,7 +763,8 @@ export default function PayAutoLineTable({
                 </p>
                 <p className="text-xs text-gray-500">
                   Total: {deliveries.length} delivery(s)
-                  {selectedKeys.size > 0 && ` | Selected: ${selectedKeys.size}`}
+                  {(selectedKeys as Set<string>).size > 0 &&
+                    ` | Selected: ${(selectedKeys as Set<string>).size}`}
                 </p>
               </>
             ) : isPharmacyBenefitUser ? (
@@ -562,7 +774,8 @@ export default function PayAutoLineTable({
                 </p>
                 <p className="text-xs text-gray-500">
                   Total: {deliveries.length} delivery(s)
-                  {selectedKeys.size > 0 && ` | Selected: ${selectedKeys.size}`}
+                  {(selectedKeys as Set<string>).size > 0 &&
+                    ` | Selected: ${(selectedKeys as Set<string>).size}`}
                 </p>
               </>
             ) : (
@@ -587,7 +800,7 @@ export default function PayAutoLineTable({
             : undefined
         }
       >
-        <TableHeader columns={COLUMNS_WITH_ACTIONS}>
+        <TableHeader columns={columns}>
           {(column) => (
             <TableColumn key={column.key}>{column.label}</TableColumn>
           )}
@@ -602,6 +815,337 @@ export default function PayAutoLineTable({
           )}
         </TableBody>
       </Table>
+
+      {/* View Details Modal */}
+      <Modal
+        isOpen={viewDetailsModal.isOpen}
+        scrollBehavior="inside"
+        size="3xl"
+        onOpenChange={(isOpen) =>
+          setViewDetailsModal((prev) => ({ ...prev, isOpen }))
+        }
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            <h2 className="text-xl font-bold">Delivery Details</h2>
+            <p className="text-sm text-gray-500 font-normal">
+              Complete information for this delivery
+            </p>
+          </ModalHeader>
+          <ModalBody>
+            {viewDetailsModal.delivery && (
+              <div className="space-y-6">
+                {/* Enrollee Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3 text-gray-800">
+                    Enrollee Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Enrollee Name
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.EnrolleeName || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Enrollee ID
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.EnrolleeId || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Scheme Type
+                      </p>
+                      <Badge color="primary" variant="flat">
+                        {viewDetailsModal.delivery.scheme_type || "N/A"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Email
+                      </p>
+                      <p className="text-sm font-medium break-words">
+                        {viewDetailsModal.delivery.email ||
+                          viewDetailsModal.delivery.EnrolleeEmail ||
+                          "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Phone Number
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.phonenumber || "N/A"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Member Address
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.memberaddress || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pharmacy Information */}
+                {viewDetailsModal.delivery.PharmacyName && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-lg mb-3 text-gray-800">
+                      Pharmacy Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase mb-1">
+                          Pharmacy Name
+                        </p>
+                        <p className="text-sm font-medium">
+                          {viewDetailsModal.delivery.PharmacyName}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase mb-1">
+                          Pharmacy ID
+                        </p>
+                        <p className="text-sm font-medium">
+                          {viewDetailsModal.delivery.pharmacyid || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Delivery Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3 text-gray-800">
+                    Delivery Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Created Date
+                      </p>
+                      <p className="text-sm font-medium">
+                        {formatDate(viewDetailsModal.delivery.inputteddate) ||
+                          "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Pay Date
+                      </p>
+                      <p
+                        className={`text-sm font-medium ${!viewDetailsModal.delivery.paydate ? "text-orange-500 italic" : ""}`}
+                      >
+                        {viewDetailsModal.delivery.paydate
+                          ? formatDate(viewDetailsModal.delivery.paydate)
+                          : "Not Paid"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Code Expiry Date
+                      </p>
+                      <p className="text-sm font-medium">
+                        {formatDate(viewDetailsModal.delivery.codeexpirydate) ||
+                          "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Delivery Status
+                      </p>
+                      <Badge
+                        color={
+                          rows.find(
+                            (r) =>
+                              r.key ===
+                              String(viewDetailsModal.delivery?.EntryNo),
+                          )?.deliveryStatus === "Delivered" ||
+                          rows.find(
+                            (r) =>
+                              r.key ===
+                              String(viewDetailsModal.delivery?.EntryNo),
+                          )?.deliveryStatus === "Picked up"
+                            ? "success"
+                            : "warning"
+                        }
+                      >
+                        {rows.find(
+                          (r) =>
+                            r.key ===
+                            String(viewDetailsModal.delivery?.EntryNo),
+                        )?.deliveryStatus || "N/A"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Cost
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.cost
+                          ? `₦${viewDetailsModal.delivery.cost}`
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Medical Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3 text-gray-800">
+                    Medical Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Diagnosis
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.DiagnosisLines?.[0]
+                          ?.DiagnosisName || "N/A"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Procedure
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.ProcedureLines?.[0]
+                          ?.ProcedureName || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Procedure Quantity
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.ProcedureLines?.[0]
+                          ?.ProcedureQuantity || "N/A"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500 uppercase mb-1">
+                        Dosage Description
+                      </p>
+                      <p className="text-sm font-medium">
+                        {viewDetailsModal.delivery.DosageDescription ||
+                          viewDetailsModal.delivery.ProcedureLines?.[0]
+                            ?.DosageDescription ||
+                          "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                {viewDetailsModal.delivery.Comment && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-lg mb-3 text-gray-800">
+                      Comment
+                    </h3>
+                    <p className="text-sm font-medium text-gray-700">
+                      {viewDetailsModal.delivery.Comment}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="default"
+              variant="light"
+              onPress={() =>
+                setViewDetailsModal({ isOpen: false, delivery: null })
+              }
+            >
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Cost Edit Modal */}
+      <Modal
+        isOpen={costEditModal.isOpen}
+        onOpenChange={(isOpen) =>
+          setCostEditModal((prev) => ({ ...prev, isOpen }))
+        }
+      >
+        <ModalContent>
+          <ModalHeader>Update Cost</ModalHeader>
+          <ModalBody>
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">
+                  Enrollee:{" "}
+                  <span className="font-semibold text-gray-900">
+                    {costEditModal.delivery?.EnrolleeName || "N/A"}
+                  </span>
+                </p>
+                <p className="text-sm text-gray-600">
+                  Current Cost:{" "}
+                  <span className="font-semibold text-gray-900">
+                    {costEditModal.delivery?.cost
+                      ? `₦${costEditModal.delivery.cost}`
+                      : "N/A"}
+                  </span>
+                </p>
+              </div>
+              <Input
+                label="New Cost"
+                placeholder="Enter new cost"
+                type="number"
+                value={costEditModal.newCost}
+                variant="bordered"
+                onChange={(e) =>
+                  setCostEditModal((prev) => ({
+                    ...prev,
+                    newCost: e.target.value,
+                  }))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isUpdatingCost) {
+                    handleCostUpdate();
+                  }
+                }}
+              />
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <div className="flex gap-2 justify-end">
+              <Button
+                color="default"
+                variant="light"
+                onPress={() =>
+                  setCostEditModal({
+                    isOpen: false,
+                    delivery: null,
+                    newCost: "",
+                  })
+                }
+              >
+                Cancel
+              </Button>
+              <Button
+                color="primary"
+                isLoading={isUpdatingCost}
+                startContent={!isUpdatingCost ? <Check size={16} /> : null}
+                onPress={handleCostUpdate}
+              >
+                {isUpdatingCost ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
