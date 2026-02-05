@@ -1,21 +1,39 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useChunkValue } from "stunk/react";
 import { Spinner } from "@heroui/spinner";
 import { Switch } from "@heroui/switch";
+import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
+import { Selection } from "@heroui/table";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from "@heroui/modal";
 import toast from "react-hot-toast";
 
 import {
   getProviderPickups,
   getPickupDetails,
 } from "@/lib/services/delivery-service";
-import { deliveryStore } from "@/lib/store/delivery-store";
+import {
+  deliveryStore,
+  deliveryActions,
+  deliveryFormState,
+} from "@/lib/store/delivery-store";
 import { authStore } from "@/lib/store/app-store";
 import { downloadTableAsPDF } from "@/lib/utils";
 import PayAutoLineTable from "@/components/pay-autoline-table";
 import PageHeader from "@/components/ui/page-header";
 import { DownloadIcon } from "@/components/icons";
 import ProviderPickupsTable from "@/components/pickup/provider-pickup-table";
+import EnrolleeSelectionStep from "@/components/enrollee-setup";
+import ProviderSetup from "@/components/deliveries/provider-setup";
+import DiagnosisProcedureStep from "@/components/deliveries/procedure-setup";
+import AdditionalInfoStep from "@/components/deliveries/additional-setup";
+import AssignPharmacyModal from "@/components/assign-pendings/assign-pharmacy-modal";
 import { payAutoLine } from "@/lib/services/payautoline-services";
 
 export default function PendingCollectionsPage() {
@@ -26,16 +44,36 @@ export default function PendingCollectionsPage() {
     isLoadingDetails,
     error,
     detailsError,
+    showModal,
+    isSubmitting,
   } = useChunkValue(deliveryStore);
+  const formState = useChunkValue(deliveryFormState);
   const { user } = useChunkValue(authStore);
   const [showAll, setShowAll] = useState(false);
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
+  const [searchEnrolleeId, setSearchEnrolleeId] = useState("");
   const [selectedEnrolleeId, setSelectedEnrolleeId] = useState<string | null>(
     null,
   );
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  // NEW: State to preserve pagination
+  const [currentPage, setCurrentPage] = useState(1);
 
   const pharmacyId = user?.provider_id?.toString() || "";
+
+  // Calculate selected deliveries for Assign Pharmacy functionality
+  const selectedDeliveries = useMemo(() => {
+    if (selectedKeys === "all") {
+      return pickupDetails || [];
+    }
+
+    return (pickupDetails || []).filter((delivery: any) => {
+      const key = String(delivery.EntryNo);
+
+      return (selectedKeys as Set<string>).has(key);
+    });
+  }, [selectedKeys, pickupDetails]);
 
   // Fetch initial pickups list
   useEffect(() => {
@@ -65,6 +103,19 @@ export default function PendingCollectionsPage() {
     }
   }, [selectedEnrolleeId, pharmacyId, showAll]);
 
+  const handleSearch = () => {
+    if (pharmacyId) {
+      getProviderPickups(pharmacyId, false, searchEnrolleeId);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchEnrolleeId("");
+    if (pharmacyId) {
+      getProviderPickups(pharmacyId, false);
+    }
+  };
+
   const handleBackToList = () => {
     setSelectedEnrolleeId(null);
     setSelectedKeys(new Set()); // Clear selections
@@ -78,6 +129,7 @@ export default function PendingCollectionsPage() {
     if (pharmacyId) {
       getProviderPickups(pharmacyId, showAll);
     }
+    // NOTE: We DON'T reset currentPage here - it stays on the same page!
   };
 
   const handleDownloadPDF = () => {
@@ -143,6 +195,53 @@ export default function PendingCollectionsPage() {
     [pharmacyId, selectedEnrolleeId, showAll, handleRefresh],
   );
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      deliveryActions.openModal();
+    } else {
+      deliveryActions.closeModal();
+      if (!formState.isEditing) {
+        deliveryFormState.reset();
+      }
+    }
+  };
+
+  const handleSubmit = () => {
+    deliveryActions.submitAcuteForm(false).then(() => {
+      // Refresh details after successful edit
+      if (selectedEnrolleeId) {
+        toast.loading("Refreshing details...", { id: "refresh-after-edit" });
+        getPickupDetails(pharmacyId, selectedEnrolleeId, showAll).then(() => {
+          toast.success("Delivery updated and details refreshed!", {
+            id: "refresh-after-edit",
+          });
+        });
+      }
+    });
+  };
+
+  const handleAssignPharmacy = () => {
+    if (selectedDeliveries.length === 0) {
+      toast.error("Please select at least one delivery to assign");
+
+      return;
+    }
+    setShowAssignModal(true);
+  };
+
+  const handleAssignSuccess = () => {
+    // Refresh data after successful assignment
+    if (selectedEnrolleeId) {
+      getPickupDetails(pharmacyId, selectedEnrolleeId, showAll);
+    }
+    // Also refresh the main pickups list
+    if (pharmacyId) {
+      getProviderPickups(pharmacyId, showAll);
+    }
+    // Clear selections
+    setSelectedKeys(new Set());
+  };
+
   if (isLoading && !selectedEnrolleeId) {
     return (
       <>
@@ -203,10 +302,49 @@ export default function PendingCollectionsPage() {
                   </span>
                 </Switch>
               </div>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  className="max-w-xs"
+                  classNames={{
+                    input: "text-sm",
+                    inputWrapper: "h-10",
+                  }}
+                  placeholder="Search by Enrollee ID..."
+                  size="sm"
+                  value={searchEnrolleeId}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch();
+                    }
+                  }}
+                  onValueChange={setSearchEnrolleeId}
+                />
+                <Button
+                  color="primary"
+                  isDisabled={!searchEnrolleeId.trim()}
+                  size="sm"
+                  onPress={handleSearch}
+                >
+                  Search
+                </Button>
+                {searchEnrolleeId && (
+                  <Button
+                    color="default"
+                    size="sm"
+                    variant="flat"
+                    onPress={handleClearSearch}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
 
             <ProviderPickupsTable
+              currentPage={currentPage}
               pickups={providerPickups}
+              onPageChange={setCurrentPage}
               onRowClick={handleRowClick}
             />
           </>
@@ -237,14 +375,17 @@ export default function PendingCollectionsPage() {
 
               <div className="flex gap-2">
                 {user?.surname === "PHARMACY BENEFIT PROGRAMME" &&
-                  selectedKeys.size > 0 && (
+                  (selectedKeys as Set<string>).size > 0 && (
                     <Button
                       color="success"
                       isDisabled={isPaymentLoading}
                       isLoading={isPaymentLoading}
                       onPress={() => {
                         const selectedDeliveries = (pickupDetails || []).filter(
-                          (d: any) => selectedKeys.has(String(d.EntryNo)),
+                          (d: any) =>
+                            (selectedKeys as Set<String>).has(
+                              String(d.EntryNo),
+                            ),
                         );
                         const totalCost = selectedDeliveries.reduce(
                           (sum: number, delivery: any) => {
@@ -262,10 +403,27 @@ export default function PendingCollectionsPage() {
                         handlePaySelected(selectedDeliveries, totalCost);
                       }}
                     >
-                      Mark as Pack ({selectedKeys.size})
+                      Mark as Pack ({(selectedKeys as Set<String>).size})
                     </Button>
                   )}
 
+                {/* Assign Pharmacy Button */}
+                {user?.surname === "PHARMACY BENEFIT PROGRAMME" &&
+                  (selectedKeys as Set<string>).size > 0 && (
+                    <Button
+                      className="text-white"
+                      color="warning"
+                      isDisabled={
+                        (pickupDetails || []).length === 0 ||
+                        selectedDeliveries.length === 0
+                      }
+                      onPress={handleAssignPharmacy}
+                    >
+                      Reassign Pharmacy
+                    </Button>
+                  )}
+
+                {/* Download PDF Button */}
                 <Button
                   color="primary"
                   isDisabled={(pickupDetails || []).length === 0}
@@ -288,8 +446,15 @@ export default function PendingCollectionsPage() {
             ) : (
               <PayAutoLineTable
                 deliveries={pickupDetails || []}
+                enableCostEdit={
+                  user?.surname === "PHARMACY BENEFIT PROGRAMME" ? true : false
+                }
+                enableEditActions={
+                  user?.surname === "PHARMACY BENEFIT PROGRAMME" ? true : false
+                }
                 enablePharmacyBenefitSelection={true}
-                isSelectable={false}
+                enableViewDetails={true}
+                isSelectable={true}
                 selectedKeys={selectedKeys}
                 user={user}
                 onPaySelected={handlePaySelected}
@@ -300,6 +465,87 @@ export default function PendingCollectionsPage() {
           </>
         )}
       </div>
+
+      {/* Assign Pharmacy Modal */}
+      <AssignPharmacyModal
+        enrolleeId={selectedEnrolleeId}
+        isOpen={showAssignModal}
+        selectedDeliveries={selectedDeliveries}
+        onClose={() => setShowAssignModal(false)}
+        onSuccess={handleAssignSuccess}
+      />
+
+      {/* Edit Delivery Modal */}
+      <Modal
+        backdrop="blur"
+        isDismissable={false}
+        isOpen={showModal}
+        scrollBehavior="inside"
+        shouldCloseOnInteractOutside={(element) => {
+          return !element.className.includes("heroui-select");
+        }}
+        size="5xl"
+        onOpenChange={handleOpenChange}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            {formState.isEditing ? "Edit Delivery" : "Create Delivery"}
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-6">
+              {/* Section 1: Enrollee Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                  1. Enrollee Information
+                </h3>
+                <EnrolleeSelectionStep />
+              </div>
+
+              {/* Section 2: Provider/Pharmacy Setup */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                  2. Provider & Pharmacy Setup
+                </h3>
+                <ProviderSetup />
+              </div>
+
+              {/* Section 3: Diagnosis & Procedures */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                  3. Diagnosis & Procedures
+                </h3>
+                <DiagnosisProcedureStep />
+              </div>
+
+              {/* Section 4: Additional Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                  4. Additional Information
+                </h3>
+                <AdditionalInfoStep />
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="danger"
+              variant="light"
+              onPress={() => handleOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="primary"
+              isDisabled={isSubmitting}
+              isLoading={isSubmitting}
+              radius="sm"
+              onPress={handleSubmit}
+            >
+              {formState.isEditing ? "Update Delivery" : "Create Delivery"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 }
