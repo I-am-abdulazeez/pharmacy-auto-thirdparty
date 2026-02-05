@@ -3,6 +3,7 @@ import { useChunkValue } from "stunk/react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Spinner } from "@heroui/spinner";
+import { Selection } from "@heroui/table";
 import toast from "react-hot-toast";
 
 import PageHeader from "@/components/ui/page-header";
@@ -18,7 +19,7 @@ export default function PayAutoLinePage() {
 
   const [enrolleeId, setEnrolleeId] = useState("");
   const [codeToPharmacy, setCodeToPharmacy] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
 
   const lastSearchRef = useRef<string>("");
@@ -58,9 +59,8 @@ export default function PayAutoLinePage() {
 
   // Refresh function to reload deliveries after deletion
   const handleRefresh = useCallback(() => {
+    // Reset the ref to allow the same search to run again
     lastSearchRef.current = "";
-    isFetchingRef.current = false;
-
     handleSearch();
   }, [handleSearch]);
 
@@ -78,7 +78,7 @@ export default function PayAutoLinePage() {
   }, []);
 
   const handlePaySelected = async () => {
-    if (selectedKeys.size === 0) {
+    if ((selectedKeys as Set<String>).size === 0) {
       toast.error("Please select at least one delivery to pay");
 
       return;
@@ -86,7 +86,7 @@ export default function PayAutoLinePage() {
 
     // Get selected deliveries
     const selectedDeliveries = deliveries.filter((d) =>
-      selectedKeys.has(String(d.EntryNo)),
+      (selectedKeys as Set<String>).has(String(d.EntryNo)),
     );
 
     // Validate costs - check if any delivery has cost = 0 or N/A
@@ -133,7 +133,7 @@ export default function PayAutoLinePage() {
 
     setIsPaymentLoading(true);
     try {
-      const entryNumbers = Array.from(selectedKeys);
+      const entryNumbers = selectedDeliveries.map((d) => String(d.EntryNo));
 
       await payAutoLine(
         entryNumbers,
@@ -144,7 +144,7 @@ export default function PayAutoLinePage() {
       );
 
       toast.success(
-        `Successfully marked ${selectedKeys.size} delivery(s) as paid. Total: ₦${totalCost.toFixed(2)}`,
+        `Successfully marked ${(selectedKeys as Set<String>).size} delivery(s) as paid. Total: ₦${totalCost.toFixed(2)}`,
       );
       setSelectedKeys(new Set());
       handleRefresh();
@@ -222,7 +222,7 @@ export default function PayAutoLinePage() {
             </Button>
           )}
 
-          {selectedKeys.size > 0 && (
+          {(selectedKeys as Set<String>).size > 0 && (
             <Button
               color="success"
               isDisabled={isPaymentLoading}
@@ -230,7 +230,7 @@ export default function PayAutoLinePage() {
               radius="sm"
               onPress={handlePaySelected}
             >
-              Mark as Paid ({selectedKeys.size})
+              Mark as Paid ({(selectedKeys as Set<String>).size})
             </Button>
           )}
         </div>
