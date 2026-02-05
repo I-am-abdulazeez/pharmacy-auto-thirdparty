@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useChunkValue } from "stunk/react";
 import { Spinner } from "@heroui/spinner";
+import { Input } from "@heroui/input";
 import { Switch } from "@heroui/switch";
 import { Button } from "@heroui/button";
+import { Selection } from "@heroui/table";
 
 import {
   getDeliveriesDetails,
@@ -31,7 +33,9 @@ export default function PendingDeliveriesPage() {
   } = useChunkValue(deliveryStore);
   const { user } = useChunkValue(authStore);
   const [showAll, setShowAll] = useState(false);
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
+  const [searchEnrolleeId, setSearchEnrolleeId] = useState("");
+
   const [selectedEnrolleeId, setSelectedEnrolleeId] = useState<string | null>(
     null,
   );
@@ -89,6 +93,19 @@ export default function PendingDeliveriesPage() {
     downloadTableAsPDF(providerDetails || [], showAll);
   };
 
+  const handleSearch = () => {
+    if (pharmacyId) {
+      getProviderDeliveries(pharmacyId, false, searchEnrolleeId);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchEnrolleeId("");
+    if (pharmacyId) {
+      getProviderDeliveries(pharmacyId, false);
+    }
+  };
+
   const handleRetry = () => {
     if (selectedEnrolleeId) {
       getDeliveriesDetails(pharmacyId, selectedEnrolleeId, showAll);
@@ -98,7 +115,7 @@ export default function PendingDeliveriesPage() {
   };
 
   const handleAssignRider = () => {
-    if (selectedKeys.size === 0) {
+    if ((selectedKeys as Set<String>).size === 0) {
       return;
     }
     setIsAssignModalOpen(true);
@@ -174,6 +191,43 @@ export default function PendingDeliveriesPage() {
                 </Switch>
               </div>
 
+              <div className="flex items-center gap-2">
+                <Input
+                  className="max-w-xs"
+                  classNames={{
+                    input: "text-sm",
+                    inputWrapper: "h-10",
+                  }}
+                  placeholder="Search by Enrollee ID..."
+                  size="sm"
+                  value={searchEnrolleeId}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch();
+                    }
+                  }}
+                  onValueChange={setSearchEnrolleeId}
+                />
+                <Button
+                  color="primary"
+                  isDisabled={!searchEnrolleeId.trim()}
+                  size="sm"
+                  onPress={handleSearch}
+                >
+                  Search
+                </Button>
+                {searchEnrolleeId && (
+                  <Button
+                    color="default"
+                    size="sm"
+                    variant="flat"
+                    onPress={handleClearSearch}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+
               {/* Download PDF Button */}
               <div className="flex gap-3">
                 <Button
@@ -191,10 +245,10 @@ export default function PendingDeliveriesPage() {
                 {/* Assign Rider Button */}
                 <Button
                   color="primary"
-                  isDisabled={selectedKeys.size === 0}
+                  isDisabled={(selectedKeys as Set<String>).size === 0}
                   onPress={handleAssignRider}
                 >
-                  Assign Rider ({selectedKeys.size})
+                  Assign Rider ({(selectedKeys as Set<String>).size})
                 </Button>
               </div>
             </div>
