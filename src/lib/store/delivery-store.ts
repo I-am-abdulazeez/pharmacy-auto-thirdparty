@@ -8,6 +8,7 @@ import { appChunk, authStore } from "./app-store";
 
 import { Delivery, Diagnosis, Procedure, Provider } from "@/types";
 import { getDeliveries } from "@/lib/services/delivery-service";
+import { EmailTemplateData } from "@/lib/services/mail-service";
 
 
 export interface ProviderPickup {
@@ -53,6 +54,7 @@ export const initialFormState = {
   dosageDescription: "",
   comment: "",
   memberaddress: "",
+  attachment: null,
 
   // NEW FIELDS FOR STATE SELECTION
   selectedStateId: "",
@@ -111,7 +113,7 @@ export const deliveryStore = chunk({
 export const deliveryActions = {
   openModal: () => {
     deliveryStore.set(state => ({ ...state, showModal: true }));
-    deliveryFormState.reset();
+    // deliveryFormState.reset();
   },
 
   closeModal: () => {
@@ -235,14 +237,16 @@ export const deliveryActions = {
       procedureLines: [...state.procedureLines, procedure]
     }));
   },
-
-  setProvider: (provider: Provider) => {
+  setProvider: (provider: Provider, pharmacyType: string) => {
     deliveryFormState.set(state => ({
       ...state,
-      pharmacyId: provider.Pharmacyid,
-      pharmacyName: provider.PharmacyName
+      pharmacyId: Number(provider.Pharmacyid),
+      pharmacyName: provider.PharmacyName,
+      pharmacyType: pharmacyType
+
     }));
   },
+
 
   removeProvider: () => {
     deliveryFormState.set(state => ({
@@ -331,6 +335,7 @@ export const deliveryActions = {
 
       diagnosisLines: diagnosisLines,
       procedureLines: procedureLines,
+      attachment: safeGet(data.attachment, null),
 
       additionalInformation: safeGet(data.AdditionalInformation, ""),
       dosageDescription: safeGet(data.DosageDescription, ""),
@@ -370,7 +375,7 @@ export const deliveryActions = {
     }));
   },
 
-  submitForm: async (confirmDuplicates: boolean = false) => {
+  submitAcuteForm: async (confirmDuplicates: boolean = false) => {
     try {
       deliveryStore.set(state => ({ ...state, isSubmitting: true }));
       const formData = deliveryFormState.get();
@@ -436,7 +441,7 @@ export const deliveryActions = {
         EntryNo: formData.isEditing ? formData.entryno : undefined,
       };
 
-      const { editDelivery, createDelivery } = await import("@/lib/services/delivery-service");
+      const { editDelivery, createAcuteDelivery } = await import("@/lib/services/delivery-service");
       // const { sendSms } = await import("@/lib/services/sms-service");
       const { sendPhaEmailAlert } = await import("@/lib/services/mail-service");
 
@@ -451,7 +456,7 @@ export const deliveryActions = {
         };
         const shouldSkipNavigation = !confirmDuplicates;
 
-        response = await createDelivery(formattedData, shouldSkipNavigation);
+        response = await createAcuteDelivery(formattedData, shouldSkipNavigation);
       }
 
       // Check for duplicate procedures
@@ -621,10 +626,225 @@ export const deliveryActions = {
     }
   },
 
+  submitRoutineForm: async (confirmDuplicates: boolean = false) => {
+    try {
+      deliveryStore.set(state => ({ ...state, isSubmitting: true }));
+      const formData = deliveryFormState.get();
+      const { user } = authStore.get();
+
+      const delivery: Delivery = {
+        EnrolleeId: formData.enrolleeId,
+        EnrolleeName: formData.enrolleeName,
+        EnrolleeAge: formData.enrolleeAge,
+        EnrolleeEmail: formData.enrolleeEmail,
+        SchemeId: formData.schemeId,
+        SchemeName: formData.schemeName,
+        DeliveryFrequency: formData.deliveryFrequency,
+        DelStartDate: formData.delStartDate,
+        NextDeliveryDate: formData.nextDeliveryDate,
+        FrequencyDuration: formData.frequencyDuration,
+        EndDate: formData.endDate,
+        DiagnosisLines: formData.diagnosisLines,
+        ProcedureLines: formData.procedureLines,
+        AdditionalInformation: formData.additionalInformation,
+        Comment: formData.comment,
+        IsDelivered: false,
+        Username: user ? user.UserName : "Unknown",
+        deliveryaddress: formData.deliveryaddress,
+        phonenumber: formData.phonenumber,
+        Pharmacyid: formData.pharmacyId,
+        PharmacyName: formData.pharmacyName,
+        cost: formData.cost,
+        EntryNo: formData.isEditing ? formData.entryno : undefined,
+        DosageDescription: formData.dosageDescription
+      };
+
+      const deliveryEdit = {
+        EnrolleeId: formData.enrolleeId,
+        EnrolleeName: formData.enrolleeName,
+        EnrolleeAge: formData.enrolleeAge,
+        SchemeId: formData.schemeId,
+        SchemeName: formData.schemeName,
+        DeliveryFrequency: formData.deliveryFrequency,
+        DelStartDate: formData.delStartDate,
+        NextDeliveryDate: formData.nextDeliveryDate,
+        FrequencyDuration: formData.frequencyDuration,
+        EndDate: formData.endDate,
+        DiagnosisName: formData.diagnosisLines.length > 0 ? formData.diagnosisLines[0].DiagnosisName : "",
+        DiagnosisId: formData.diagnosisLines.length > 0 ? formData.diagnosisLines[0].DiagnosisId : "",
+        ProcedureName: formData.procedureLines.length > 0 ? formData.procedureLines[0].ProcedureName : "",
+        ProcedureId: formData.procedureLines.length > 0 ? formData.procedureLines[0].ProcedureId : "",
+        DosageDescription: formData.procedureLines.length > 0 ? formData.procedureLines[0].DosageDescription : "",
+        ProcedureQuantity: formData.procedureLines.length > 0 ? formData.procedureLines[0].ProcedureQuantity : 1,
+        cost: formData.procedureLines.length > 0 ? (formData.procedureLines[0].cost || formData.cost || "0") : (formData.cost || "0"),
+        AdditionalInformation: formData.additionalInformation,
+        IsDelivered: false,
+        Username: user ? user.UserName : "Unknown",
+        deliveryaddress: formData.deliveryaddress,
+        phonenumber: formData.phonenumber,
+        Pharmacyid: formData.pharmacyId,
+        PharmacyName: formData.pharmacyName,
+        EntryNo: formData.isEditing ? formData.entryno : undefined,
+      };
+
+      const { editDelivery, createRoutineDelivery } = await import("../services/delivery-service");
+
+      let response;
+
+      if (formData.isEditing) {
+        response = await editDelivery(deliveryEdit);
+      } else {
+        const formattedData = {
+          Deliveries: [delivery],
+          ConfirmDuplicates: confirmDuplicates
+        };
+
+        const emailTemplateData: EmailTemplateData = {
+          procedureName: delivery.ProcedureLines.map((value) => value.ProcedureName),
+          diagnosisName: delivery.DiagnosisLines.map(value => value.DiagnosisName),
+          enrolleeName: delivery.EnrolleeName,
+          enrolleeId: delivery.EnrolleeId,
+          deliveryAddress: delivery.deliveryaddress,
+          phoneNumber: delivery.phonenumber!
+        };
+        const shouldSkipNavigation = !confirmDuplicates;
+
+        response = await createRoutineDelivery(formattedData, emailTemplateData, shouldSkipNavigation);
+      }
+
+      // Check for duplicate procedures using the correct response structure
+      if (!confirmDuplicates && !formData.isEditing) {
+        // Check if we have the nested result structure with duplicate detection
+        const result = response.result || response;
+        const isDuplicateResponse = result.RequiresConfirmation === true ||
+          (result.status === 409 && result.ReturnMessage &&
+            result.ReturnMessage.toLowerCase().includes("duplicate"));
+
+        if (isDuplicateResponse) {
+          // Parse the warnings to extract duplicate delivery information
+          const warnings = result.Warnings || [];
+          const duplicateDeliveries = warnings.map((warning: string, index: number) => {
+            // Extract information from warning message
+            const procedureNameMatch = warning.match(/Procedure '([^']+)'/);
+            const procedureIdMatch = warning.match(/\(ID: ([^)]+)\)/);
+            const enrolleeNameMatch = warning.match(/Enrollee '([^']+)'/);
+            const enrolleeIdMatch = warning.match(/Enrollee '[^']+' \(ID: ([^)]+)\)/);
+            const endDateMatch = warning.match(/Existing end date: ([^,]+)/);
+            const startDateMatch = warning.match(/New start date: ([^"]+)/);
+
+            return {
+              DeliveryId: `DUPLICATE-${index + 1}`,
+              EnrolleeName: enrolleeNameMatch ? enrolleeNameMatch[1] : formData.enrolleeName,
+              EnrolleeId: enrolleeIdMatch ? enrolleeIdMatch[1] : formData.enrolleeId,
+              DeliveryFrequency: "Existing Delivery",
+              EndDate: endDateMatch ? endDateMatch[1].trim() : "Unknown",
+              StartDate: startDateMatch ? startDateMatch[1].trim() : "Unknown",
+              ProcedureLines: [{
+                ProcedureName: procedureNameMatch ? procedureNameMatch[1] : "Unknown Procedure",
+                ProcedureId: procedureIdMatch ? procedureIdMatch[1] : "Unknown",
+                ProcedureQuantity: 1
+              }]
+            };
+          });
+
+          deliveryActions.openDuplicateModal(duplicateDeliveries);
+
+          // IMPORTANT: Don't set isSubmitting to false here - keep it true
+          // so the form maintains its state while waiting for user confirmation
+          return response;
+        }
+
+        // Fallback: Check original response structure
+        if (response.Deliveries && response.Deliveries.length > 0) {
+          const existingDeliveries = response.Deliveries.filter((d: any) => d.DeliveryId !== null);
+
+          if (existingDeliveries.length > 0) {
+            deliveryActions.openDuplicateModal(existingDeliveries);
+
+            // IMPORTANT: Don't set isSubmitting to false here either
+            return response;
+          }
+        }
+      }
+
+      // Handle actual errors (not duplicate warnings)
+      const result = response.result || response;
+      const isSuccess = response.status === 200 && (!result.status || result.status === 200 || result.status === 409);
+      const hasErrors = result.Errors?.length > 0;
+
+      if (!isSuccess || hasErrors) {
+        const isDuplicateMessage = result.ReturnMessage &&
+          result.ReturnMessage.toLowerCase().includes("duplicate");
+
+        // Only show error toast if it's not a duplicate message
+        if (!isDuplicateMessage) {
+          toast.error(result.ReturnMessage ||
+            (formData.isEditing ? "Failed to update delivery" : "Failed to Request a Prescription Refill"));
+        }
+
+        return response;
+      }
+
+      if (!formData.isEditing && response.status === 200) {
+        try {
+          const emailTemplateData = {
+            procedureName: delivery.ProcedureLines.map((value) => value.ProcedureName),
+            diagnosisName: delivery.DiagnosisLines.map(value => value.DiagnosisName),
+            enrolleeName: delivery.EnrolleeName,
+            enrolleeId: delivery.EnrolleeId,
+            deliveryAddress: delivery.deliveryaddress!,
+            phoneNumber: delivery.phonenumber!
+          };
+
+          // Import and use the updated sendEmailAlert function
+          const { sendEmailAlert } = await import("../services/mail-service");
+
+          // Pass the attachment file (File object) to the email service
+          await sendEmailAlert(emailTemplateData, formData.attachment);
+        } catch (emailError) {
+          // Don't fail the entire operation if email fails
+          toast.error(`Delivery created successfully, but email notification failed: ${emailError}`);
+        }
+      }
+
+      if (confirmDuplicates) {
+        toast.success("Delivery created successfully with duplicate confirmation!", {
+          icon: "⚠️",
+          duration: 4000,
+        });
+      } else {
+        toast.success(response.ReturnMessage ||
+          (formData.isEditing ? "Delivery updated successfully!" : "Delivery created successfully!"));
+      }
+
+      deliveryActions.closeModal();
+      deliveryActions.closeDuplicateModal();
+      deliveryFormState.reset();
+
+      // Refresh deliveries
+      const { enrolleeId } = appChunk.get();
+
+      await getDeliveries("", enrolleeId);
+
+      return response;
+    } catch (error) {
+      toast.error(`${(error as Error).message}`);
+
+      return { status: 500, ReturnMessage: "An unexpected error occurred", Errors: [] };
+    } finally {
+      // Only set isSubmitting to false if we're not showing the duplicate modal
+      const currentState = deliveryStore.get();
+
+      if (!currentState.showDuplicateModal) {
+        deliveryStore.set(state => ({ ...state, isSubmitting: false }));
+      }
+    }
+  },
+
   handleDuplicateConfirmation: (confirm: boolean) => {
     if (confirm) {
       // User confirmed they want to create duplicate
-      deliveryActions.submitForm(true);
+      deliveryActions.submitAcuteForm(true);
     } else {
       // User cancelled, close the duplicate modal
       deliveryActions.closeDuplicateModal();
