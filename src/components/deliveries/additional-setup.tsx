@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { Button } from "@heroui/button";
 
 import { deliveryActions, deliveryFormState } from "@/lib/store/delivery-store";
+import { formatDate } from "@/lib/utils";
 
 export default function AdditionalInfoStep() {
   const formState = useChunkValue(deliveryFormState);
@@ -167,6 +168,10 @@ export default function AdditionalInfoStep() {
           </p>
           <p>
             <strong>Medication:</strong> {formState.procedureLines.length}
+          </p>
+          <p>
+            <strong>Medication Start Date:</strong>{" "}
+            {formatDate(formState.delStartDate)}
           </p>
           {formState.deliveryFrequency === "Routine" && (
             <p>
