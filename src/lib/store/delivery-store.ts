@@ -61,6 +61,10 @@ export const initialFormState = {
   selectedStateName: "",
   fullAddress: "",
   islagos: 0,  // 0 or 1
+  pharmacyType: "",
+
+  wellahealthpharmacyname: "",
+  wellahealthpharmacyid: "",
 
   currentStep: 1,
   totalSteps: 2,
@@ -323,9 +327,16 @@ export const deliveryActions = {
       deliveryaddress: safeGet(data.deliveryaddress, ""),
       phonenumber: safeGet(data.phonenumber, ""),
       cost: safeGet(data.cost, ""),
+      Tobedeliverdby: safeGet(data.Tobedeliverdby, ""),
 
+      // Handle pharmacy data
       pharmacyName: safeGet(data.pharmacyname, ""),
       pharmacyId: safeGet(data.pharmacyid, ""),
+      pharmacyType: safeGet(data.pharmacyType, ""),
+
+      // Add missing file properties
+      prescriptionFile: null as File | null,
+      attachment: null,
 
       deliveryFrequency: safeGet(data.DeliveryFrequency, ""),
       delStartDate: safeGet(data.DelStartDate, ""),
@@ -335,25 +346,25 @@ export const deliveryActions = {
 
       diagnosisLines: diagnosisLines,
       procedureLines: procedureLines,
-      attachment: safeGet(data.attachment, null),
 
       additionalInformation: safeGet(data.AdditionalInformation, ""),
       dosageDescription: safeGet(data.DosageDescription, ""),
       comment: safeGet(data.Comment, ""),
-      Tobedeliverdby: safeGet(data.Tobedeliverdby, ""),
       memberaddress: safeGet(data.memberaddress, ""),
 
-      // NEW FIELDS
-      selectedStateId: "",
-      selectedStateName: "",
-      fullAddress: safeGet(data.memberaddress, ""),
+      // Add missing state selection fields
+      selectedStateId: safeGet(data.selectedStateId, ""),
+      selectedStateName: safeGet(data.selectedStateName, ""),
+      fullAddress: safeGet(data.fullAddress || data.memberaddress, ""),
       islagos: safeGet(data.islagos, 0),
 
+      wellahealthpharmacyid: safeGet(data.wellahealthpharmacyid, ""),
+      wellahealthpharmacyname: safeGet(data.wellahealthpharmacyname, ""),
+
       currentStep: 1,
-      totalSteps: 2,
+      totalSteps: 2, // Changed from 4 to match initialFormState
       isEditing: true,
-      entryno: safeGet(data.EntryNo, 0),
-      prescriptionFile: null as File | null,
+      entryno: safeGet(data.EntryNo, 0)
     };
 
     deliveryFormState.set(formData);
