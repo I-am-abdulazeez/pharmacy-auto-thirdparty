@@ -1,5 +1,20 @@
 import { IconSvgProps } from "@/types";
 
+export const ChevronDown = (props: IconSvgProps) => {
+  return (
+    <svg
+      fill="currentColor"
+      height={props.size || props.height || 16}
+      viewBox="0 0 24 24"
+      width={props.size || props.width || 16}
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M12 15.0006L7.75732 10.758L9.17154 9.34375L12 12.1722L14.8284 9.34375L16.2426 10.758L12 15.0006Z" />
+    </svg>
+  );
+};
+
 export const DeleteIcon = (props: IconSvgProps) => {
   return (
     <svg
