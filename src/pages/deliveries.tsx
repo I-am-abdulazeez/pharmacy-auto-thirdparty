@@ -209,7 +209,11 @@ export default function DeliveriesPage() {
 
   const handleSubmit = () => {
     // Submit the form for both Acute and Routine (both are single-step now)
-    deliveryActions.submitForm(false);
+    if (formState.deliveryFrequency == "Acute") {
+      deliveryActions.submitAcuteForm(false);
+    } else {
+      deliveryActions.submitRoutineForm(false);
+    }
   };
 
   const handleRefresh = useCallback(() => {
