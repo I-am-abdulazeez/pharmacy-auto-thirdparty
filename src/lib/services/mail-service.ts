@@ -30,7 +30,7 @@ export interface EmailTemplateData {
   diagnosisName: string[];
   enrolleeName: string;
   enrolleeId: string;
-  deliveryAddress: string;
+  deliveryAddress?: string;
   phoneNumber: string;
 }
 
