@@ -6,6 +6,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Selection,
 } from "@heroui/table";
 import { Chip } from "@heroui/chip";
 import { Pagination } from "@heroui/pagination";
@@ -19,9 +20,12 @@ interface ProviderPickupsTableProps {
   onRowClick?: (enrolleeId: string) => void;
   // NEW: Optional selection props
   enableSelection?: boolean;
-  selectedKeys?: Set<string>;
-  onSelectionChange?: (keys: Set<string>) => void;
+  selectedKeys?: Selection;
+  onSelectionChange?: (keys: Selection) => void;
   columns?: { key: string; label: string }[];
+  // NEW: Controlled pagination props
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const COLUMNS = [
@@ -42,9 +46,16 @@ export default function ProviderPickupsTable({
   selectedKeys = new Set(),
   onSelectionChange,
   columns,
+  currentPage: controlledPage,
+  onPageChange,
 }: ProviderPickupsTableProps) {
-  const [page, setPage] = useState(1);
+  // Use internal state as fallback if not controlled
+  const [internalPage, setInternalPage] = useState(1);
   const [loadingRow, setLoadingRow] = useState<string | null>(null);
+
+  // Use controlled page if provided, otherwise use internal state
+  const page = controlledPage ?? internalPage;
+  const setPage = onPageChange ?? setInternalPage;
 
   const rows = useMemo(
     () =>
