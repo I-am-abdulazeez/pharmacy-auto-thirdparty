@@ -3,6 +3,7 @@ import { useChunkValue } from "stunk/react";
 import { Spinner } from "@heroui/spinner";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { Selection } from "@heroui/table";
 import { Autocomplete, AutocompleteItem } from "@heroui/autocomplete";
 
 import {
@@ -43,7 +44,7 @@ export default function ReassignOrClaimPage() {
   } = useChunkValue(deliveryStore);
   const { user } = useChunkValue(authStore);
   const [searchEnrolleeId, setSearchEnrolleeId] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set());
   const [selectedEnrolleeId, setSelectedEnrolleeId] = useState<string | null>(
     null,
   );
@@ -160,7 +161,7 @@ export default function ReassignOrClaimPage() {
   };
 
   const handleAssignRider = () => {
-    if (selectedKeys.size === 0) {
+    if ((selectedKeys as Set<String>).size === 0) {
       return;
     }
     setIsAssignModalOpen(true);
@@ -345,10 +346,10 @@ export default function ReassignOrClaimPage() {
                   {/* Reassign Rider Button */}
                   <Button
                     color="primary"
-                    isDisabled={selectedKeys.size === 0}
+                    isDisabled={(selectedKeys as Set<String>).size === 0}
                     onPress={handleAssignRider}
                   >
-                    Reassign Rider ({selectedKeys.size})
+                    Reassign Rider ({(selectedKeys as Set<String>).size})
                   </Button>
                 </div>
               </div>
