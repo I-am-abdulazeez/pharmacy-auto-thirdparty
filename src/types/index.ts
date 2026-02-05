@@ -65,8 +65,10 @@ export type LoginResponse = {
 }
 
 export type Provider = {
-  Pharmacyid: number;
+  Pharmacyid: number | string;
   PharmacyName: string;
+  PharmacyAddress?: string;
+  PharmacyTown?: string;
 };
 
 export type Diagnosis = {
@@ -122,6 +124,7 @@ export type Delivery = {
   Tobedeliverdby?: string;
   EntryNo?: number;
   DeliveryId?: string;
+  attachment?: File | null;
 
   // Fields from new API response
   inputteddate?: string;
@@ -129,7 +132,7 @@ export type Delivery = {
   email?: string;
   codeexpirydate?: string;
   paydate?: string | null;
-  ispaid?: boolean | null;
+  ispaid?: number | null;
   othernumber?: string;
   codetopharmacy?: string | null;
 };
