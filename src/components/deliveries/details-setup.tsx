@@ -13,7 +13,7 @@ export default function DeliveryDetailsStep() {
   const { enrolleeData } = useChunkValue(appChunk);
 
   const [frequencyValue, setFrequencyValue] = useState<Set<string>>(
-    new Set(formState.deliveryFrequency ? [formState.deliveryFrequency] : [])
+    new Set(formState.deliveryFrequency ? [formState.deliveryFrequency] : []),
   );
 
   const startDateValue = formState.delStartDate
@@ -25,7 +25,7 @@ export default function DeliveryDetailsStep() {
     : undefined;
 
   const frequencyOptions = [
-    { key: "One-off", label: "One-off" },
+    { key: "One-off", label: "Acute" },
     { key: "Routine", label: "Routine Refill" },
   ];
 
@@ -33,62 +33,52 @@ export default function DeliveryDetailsStep() {
 
   // Set default values in form state if they don't exist
   useEffect(() => {
-    if (!formState.deliveryFrequency) {
-      deliveryActions.updateFormField("deliveryFrequency", "One-off");
-      setFrequencyValue(new Set(["One-off"]));
+    // Sync local state with form state
+    if (formState.deliveryFrequency) {
+      setFrequencyValue(new Set([formState.deliveryFrequency]));
     }
+
     if (!formState.delStartDate) {
       const today = new Date().toISOString();
 
       deliveryActions.updateFormField("delStartDate", today);
     }
-  }, []);
 
-  useEffect(() => {
-    const frequency = Array.from(frequencyValue)[0];
+    // Auto-set fields based on delivery type
+    if (formState.deliveryFrequency === "Routine") {
+      // Set frequency duration to 50
+      deliveryActions.updateFormField("frequencyDuration", "50");
 
-    if (frequency) {
-      deliveryActions.updateFormField("deliveryFrequency", frequency);
+      // Set end date to 01/01/2050
+      const endDate = parseDate("2050-01-01");
 
-      // Clear routine-specific fields when switching to one-off
-      if (frequency === "One-off") {
-        deliveryActions.updateFormField("frequencyDuration", "");
+      deliveryActions.updateFormField("endDate", endDate.toString());
 
-        // For one-off: end date and next delivery date = start date
-        if (formState.delStartDate) {
-          const startDate = parseDate(formState.delStartDate.split("T")[0]);
+      // Calculate next delivery date if start date exists
+      if (formState.delStartDate) {
+        const startDate = parseDate(formState.delStartDate.split("T")[0]);
+        const nextDate = startDate.add({ months: 1 });
 
-          deliveryActions.updateFormField(
-            "nextDeliveryDate",
-            startDate.toString()
-          );
-          deliveryActions.updateFormField("endDate", startDate.toString());
-        }
+        deliveryActions.updateFormField(
+          "nextDeliveryDate",
+          nextDate.toString(),
+        );
       }
+    } else if (formState.deliveryFrequency === "One-off") {
+      // For one-off: end date and next delivery date = start date
+      deliveryActions.updateFormField("frequencyDuration", "");
 
-      // Set automatic values for routine
-      if (frequency === "Routine") {
-        // Set frequency duration to 50
-        deliveryActions.updateFormField("frequencyDuration", "50");
+      if (formState.delStartDate) {
+        const startDate = parseDate(formState.delStartDate.split("T")[0]);
 
-        // Set end date to 01/01/2050
-        const endDate = parseDate("2050-01-01");
-
-        deliveryActions.updateFormField("endDate", endDate.toString());
-
-        // Calculate next delivery date if start date exists
-        if (formState.delStartDate) {
-          const startDate = parseDate(formState.delStartDate.split("T")[0]);
-          const nextDate = startDate.add({ months: 1 });
-
-          deliveryActions.updateFormField(
-            "nextDeliveryDate",
-            nextDate.toString()
-          );
-        }
+        deliveryActions.updateFormField(
+          "nextDeliveryDate",
+          startDate.toString(),
+        );
+        deliveryActions.updateFormField("endDate", startDate.toString());
       }
     }
-  }, [frequencyValue, formState.delStartDate]);
+  }, [formState.deliveryFrequency, formState.delStartDate]);
 
   const handleStartDateChange = (date: DateValue | null) => {
     if (!date) return;
@@ -114,7 +104,13 @@ export default function DeliveryDetailsStep() {
   };
 
   const handleSelectionChange = (selection: SharedSelection) => {
+    // This won't be called since the select is disabled, but keeping for safety
     setFrequencyValue(selection as Set<string>);
+    const frequency = Array.from(selection as Set<string>)[0];
+
+    if (frequency) {
+      deliveryActions.updateFormField("deliveryFrequency", frequency);
+    }
   };
 
   return (
@@ -122,6 +118,8 @@ export default function DeliveryDetailsStep() {
       <h3 className="text-lg font-medium mb-4">Delivery Details</h3>
       <div className="grid grid-cols-2 gap-4">
         <Select
+          isDisabled
+          description="Medication type was selected in the previous step"
           label="Delivery Type"
           selectedKeys={frequencyValue}
           onSelectionChange={handleSelectionChange}
@@ -133,9 +131,7 @@ export default function DeliveryDetailsStep() {
 
         <DatePicker
           isRequired
-          label={
-            formState.deliveryFrequency === "One-off" ? "Start" : "Start Date"
-          }
+          label={"Start Date of Medication"}
           maxValue={memberExpiryDate}
           value={startDateValue}
           onChange={handleStartDateChange}
