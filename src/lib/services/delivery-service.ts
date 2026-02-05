@@ -4,6 +4,8 @@ import { Dispatch, SetStateAction } from "react";
 import { deliveryStore } from "../store/delivery-store";
 import { API_URL, transformApiResponse } from "../utils";
 
+import { EmailTemplateData, sendEmailAlert } from "./mail-service";
+
 import { Delivery } from "@/types";
 
 
@@ -105,7 +107,8 @@ export const getDeliveries = async (
  */
 export const getProviderPickups = async (
   pharmacyid: string,
-  showall: boolean = false
+  showall: boolean = false,
+  enrolleeId: string = "",
 ): Promise<any> => {
   try {
     deliveryStore.set((state) => ({
@@ -118,6 +121,12 @@ export const getProviderPickups = async (
 
     params.append("pharmacyid", pharmacyid);
     params.append("showall", String(showall));
+
+
+    // NEW: Add enrolleeId parameter if provided
+    if (enrolleeId) {
+      params.append("enrolleeid", enrolleeId);
+    }
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment_Provider?${params.toString()}`;
 
@@ -168,7 +177,8 @@ export const getProviderPickups = async (
 export const getPickupDetails = async (
   pharmacyid: string,
   enrolleeId: string,
-  showall: boolean = false
+  showall: boolean = false,
+  afterpack: number = 3
 ): Promise<any> => {
   try {
     deliveryStore.set((state) => ({
@@ -182,10 +192,8 @@ export const getPickupDetails = async (
     params.append("pharmacyid", pharmacyid);
     params.append("enrolleeid", enrolleeId);
     params.append("showall", String(showall));
+    params.append("afterpack", String(afterpack));
 
-    if (enrolleeId) {
-      params.append("enrolleeid", enrolleeId);
-    }
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
 
@@ -365,7 +373,8 @@ export const getReassignDetails = async (
 export const getProviderDeliveries = async (
   pharmacyid: string,
   showall: boolean = false,
-  afterpack: number = 1
+  enrolleeId: string = "",
+  afterpack: number = 1,
 ): Promise<any> => {
   try {
     deliveryStore.set((state) => ({
@@ -379,6 +388,11 @@ export const getProviderDeliveries = async (
     params.append("pharmacyid", pharmacyid);
     params.append("showall", String(showall));
     params.append("afterpack", String(afterpack));
+
+    // NEW: Add enrolleeId parameter if provided
+    if (enrolleeId) {
+      params.append("enrolleeid", enrolleeId);
+    }
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment_Provider?${params.toString()}`;
 
@@ -494,7 +508,7 @@ export const getDeliveriesDetails = async (
  * @param deliveryData - Delivery data containing array of deliveries
  * @param skipNavigation - Whether to skip navigation after creation
  */
-export const createDelivery = async (
+export const createAcuteDelivery = async (
   deliveryData: { Deliveries: Delivery[]; ConfirmDuplicates?: boolean },
   skipNavigation: boolean = false
 ): Promise<any> => {
@@ -563,6 +577,72 @@ export const createDelivery = async (
       ReturnMessage: "Failed to connect to the server",
       Warnings: [],
       Errors: [],
+    };
+  }
+};
+
+export const createRoutineDelivery = async (
+  deliveryData: { Deliveries: Delivery[] },
+  emailData: EmailTemplateData,
+  skipNavigation: boolean = false
+): Promise<any> => {
+  try {
+    deliveryStore.set((state) => ({
+      ...state,
+      isSubmitting: true,
+    }));
+
+    const apiUrl = `${API_URL}/PharmacyDelivery/InsertBatchDeliveryTracking_THIRDPARTY`;
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(deliveryData),
+    });
+
+    const data = await response.json();
+
+    deliveryStore.set((state) => ({
+      ...state,
+      isSubmitting: false,
+    }));
+
+    if (!response.ok) {
+      return {
+        status: response.status,
+        result: null,
+        ReturnMessage: data.ReturnMessage || `Failed to Request a Prescription Refill: ${response.status} ${response.statusText}`,
+      };
+    }
+    if (!skipNavigation) {
+      try {
+        await sendEmailAlert(emailData);
+      } catch (emailError) {
+        toast.error(`${emailError}`);
+      }
+
+      getDeliveries("", deliveryData.Deliveries[0].EnrolleeId);
+    }
+
+    return {
+      status: response.status,
+      result: data,
+      ReturnMessage: data.ReturnMessage || "Delivery created successfully",
+    };
+
+  } catch (error) {
+    deliveryStore.set((state) => ({
+      ...state,
+      isSubmitting: false,
+    }));
+    toast.error((error as Error).message)
+
+    return {
+      status: 0,
+      result: null,
+      ReturnMessage: "Failed to connect to the server",
     };
   }
 };
