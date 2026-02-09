@@ -24,7 +24,6 @@ import {
   deliveryFormState,
 } from "@/lib/store/delivery-store";
 import { authStore } from "@/lib/store/app-store";
-import { downloadTableAsPDF } from "@/lib/utils";
 import PayAutoLineTable from "@/components/pay-autoline-table";
 import PageHeader from "@/components/ui/page-header";
 import { DownloadIcon } from "@/components/icons";
@@ -35,6 +34,7 @@ import DiagnosisProcedureStep from "@/components/deliveries/procedure-setup";
 import AdditionalInfoStep from "@/components/deliveries/additional-setup";
 import AssignPharmacyModal from "@/components/assign-pendings/assign-pharmacy-modal";
 import { payAutoLine } from "@/lib/services/payautoline-services";
+import { downloadTableAsExcel } from "@/lib/utils/excel-exports";
 
 export default function PendingCollectionsPage() {
   const {
@@ -132,8 +132,8 @@ export default function PendingCollectionsPage() {
     // NOTE: We DON'T reset currentPage here - it stays on the same page!
   };
 
-  const handleDownloadPDF = () => {
-    downloadTableAsPDF(pickupDetails || [], showAll);
+  const handleDownloadExcel = () => {
+    downloadTableAsExcel(pickupDetails || [], showAll);
   };
 
   const handleRetry = () => {
@@ -429,9 +429,9 @@ export default function PendingCollectionsPage() {
                   isDisabled={(pickupDetails || []).length === 0}
                   startContent={<DownloadIcon />}
                   variant="flat"
-                  onPress={handleDownloadPDF}
+                  onPress={handleDownloadExcel}
                 >
-                  Download PDF
+                  Download Excel
                 </Button>
               </div>
             </div>
