@@ -117,6 +117,10 @@ export const transformApiResponse = (
     paydate: apiResponse.paydate || null,
     ispaid: apiResponse.ispaid || null,
     codetopharmacy: apiResponse.codetopharmacy || null,
+    isClaimed: apiResponse.isCliamed || null,
+    assignedrider: apiResponse.assignedrider || null,
+    assignedrideron: apiResponse.assignedrideron || null,
+    source: apiResponse.SOURCE || "",
   };
 };
 
