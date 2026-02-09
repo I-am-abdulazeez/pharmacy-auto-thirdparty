@@ -1,4 +1,5 @@
 import { chunk } from "stunk";
+import { withPersistence } from "stunk/middleware"
 
 import { EnrolleeData } from "../services/enrollee-service";
 
@@ -34,12 +35,12 @@ type AuthState = {
   isProvider: boolean;
 };
 
-export const authStore = chunk<AuthState>({
+export const authStore = withPersistence(chunk<AuthState>({
   isLoading: false,
   user: null,
   isLeadway: false,
   isProvider: false,
-})
+}), { key: "app-store" })
 
 export const resetProviderFilters = (stateId: string) => {
   appChunk.set((state) => ({
