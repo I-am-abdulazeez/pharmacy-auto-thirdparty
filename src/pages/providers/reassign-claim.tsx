@@ -13,15 +13,15 @@ import {
 import { fetchRiders } from "@/lib/services/rider-service";
 import { deliveryStore } from "@/lib/store/delivery-store";
 import { authStore } from "@/lib/store/app-store";
-import {
-  downloadTableAsPDF,
-  downloadReassignDeliveriesAsPDF,
-} from "@/lib/utils";
 import PayAutoLineTable from "@/components/pay-autoline-table";
 import PageHeader from "@/components/ui/page-header";
 import { DownloadIcon } from "@/components/icons";
 import ProviderPickupsTable from "@/components/pickup/provider-pickup-table";
 import AssignRiderModal from "@/components/rider/assign-rider-modal";
+import {
+  downloadReassignDeliveriesAsExcel,
+  downloadTableAsExcel,
+} from "@/lib/utils/excel-exports";
 
 const COLUMNS = [
   { key: "EnrolleeId", label: "Enrollee ID" },
@@ -149,8 +149,8 @@ export default function ReassignOrClaimPage() {
     }
   };
 
-  const handleDownloadPDF = () => {
-    downloadTableAsPDF(reassignDetails || [], false);
+  const handleDownloadExcel = () => {
+    downloadTableAsExcel(reassignDetails || [], false);
   };
 
   const handleRetry = () => {
@@ -289,7 +289,7 @@ export default function ReassignOrClaimPage() {
                     placeholder="Filter by Rider"
                     selectedKey={selectedRider || null}
                     size="sm"
-                    onSelectionChange={(key) => {
+                    onSelectionChange={(key: string | number) => {
                       const riderName = key?.toString() || "";
 
                       handleRiderFilter(riderName);
@@ -338,10 +338,10 @@ export default function ReassignOrClaimPage() {
                     startContent={<DownloadIcon />}
                     variant="flat"
                     onPress={() =>
-                      downloadReassignDeliveriesAsPDF(filteredDeliveries)
+                      downloadReassignDeliveriesAsExcel(filteredDeliveries)
                     }
                   >
-                    Download PDF
+                    Download Excel
                   </Button>
 
                   {/* Reassign Rider Button */}
@@ -362,8 +362,8 @@ export default function ReassignOrClaimPage() {
               enableSelection={true}
               pickups={filteredDeliveries}
               selectedKeys={selectedKeys}
-              onRowClick={handleRowClick}
               onPageChange={setCurrentPage}
+              onRowClick={handleRowClick}
               onSelectionChange={setSelectedKeys}
             />
 
@@ -406,7 +406,7 @@ export default function ReassignOrClaimPage() {
                 isDisabled={(reassignDetails || []).length === 0}
                 startContent={<DownloadIcon />}
                 variant="flat"
-                onPress={handleDownloadPDF}
+                onPress={handleDownloadExcel}
               >
                 Download PDF
               </Button>
