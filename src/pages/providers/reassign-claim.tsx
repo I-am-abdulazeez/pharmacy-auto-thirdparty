@@ -49,6 +49,7 @@ export default function ReassignOrClaimPage() {
     null,
   );
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Rider filtering state
   const [riders, setRiders] = useState<any[]>([]);
@@ -357,10 +358,12 @@ export default function ReassignOrClaimPage() {
 
             <ProviderPickupsTable
               columns={COLUMNS}
+              currentPage={currentPage}
               enableSelection={true}
               pickups={filteredDeliveries}
               selectedKeys={selectedKeys}
               onRowClick={handleRowClick}
+              onPageChange={setCurrentPage}
               onSelectionChange={setSelectedKeys}
             />
 
