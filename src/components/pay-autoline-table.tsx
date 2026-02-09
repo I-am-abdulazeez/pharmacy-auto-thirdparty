@@ -23,60 +23,20 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import toast from "react-hot-toast";
+import { useLocation } from "react-router-dom";
 
 import {
   editDelivery,
   createAcuteDelivery,
 } from "@/lib/services/delivery-service";
-import { AUTOLINE_COLUMNS } from "@/lib/constants";
+import {
+  AUTOLINE_COLUMNS,
+  AUTOLINE_COLUMNS_WITHOUT_SOURCE,
+} from "@/lib/constants";
 import { API_URL, formatDate } from "@/lib/utils";
 import { deliveryActions } from "@/lib/store/delivery-store";
 import { EditIcon, DeleteIcon, EyeIcon, Check } from "@/components/icons";
-
-interface Delivery {
-  EntryNo?: number;
-  EnrolleeName?: string;
-  EnrolleeId?: string;
-  EnrolleeEmail?: string;
-  EnrolleeAge?: number;
-  SchemeId?: string;
-  SchemeName?: string;
-  ProcedureLines?: Array<{
-    ProcedureName?: string;
-    ProcedureId?: string;
-    ProcedureQuantity?: number;
-    cost?: string;
-    DosageDescription?: string;
-  }>;
-  DiagnosisLines?: Array<{
-    DiagnosisName?: string;
-    DiagnosisId?: string;
-  }>;
-  phonenumber?: string;
-  deliveryaddress?: string;
-  cost?: string;
-  scheme_type?: string;
-  ispaid?: number | null;
-  isClaimed?: number | null;
-  paydate?: string | null;
-  codeexpirydate?: string;
-  inputteddate?: string;
-  DeliveryFrequency?: string;
-  DelStartDate?: string | null;
-  NextDeliveryDate?: string | null;
-  FrequencyDuration?: string;
-  EndDate?: string | null;
-  AdditionalInformation?: string;
-  DosageDescription?: string;
-  Comment?: string;
-  pharmacyid?: string;
-  PharmacyName?: string;
-  email?: string;
-  memberaddress?: string;
-  assignedRider?: string | null;
-  IsDelivered?: boolean;
-}
-
+import { Delivery } from "@/types";
 interface PayAutoLineTableProps {
   deliveries: Delivery[];
   selectedKeys: Selection;
@@ -119,6 +79,8 @@ export default function PayAutoLineTable({
   >({});
   const [page, setPage] = useState(1);
 
+  const location = useLocation();
+
   // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deliveryToDelete, setDeliveryToDelete] = useState<Delivery | null>(
@@ -152,7 +114,11 @@ export default function PayAutoLineTable({
 
   // Determine which columns to show based on enabled features
   const columns = useMemo(() => {
-    const baseColumns = [...AUTOLINE_COLUMNS];
+    const realColumn =
+      location.pathname === "/provider/reassign-or-claim"
+        ? AUTOLINE_COLUMNS_WITHOUT_SOURCE
+        : AUTOLINE_COLUMNS;
+    const baseColumns = [...realColumn];
 
     // Always add actions column
     baseColumns.push({ key: "actions", label: "Actions" });
@@ -168,21 +134,27 @@ export default function PayAutoLineTable({
 
         const isPaid = delivery.ispaid === 1;
         const isClaimed = delivery.isClaimed === 1;
+        const isNullClaimed = delivery.isClaimed === null;
         const hasAssignedRider =
-          delivery.assignedRider !== null &&
-          delivery.assignedRider !== undefined;
+          delivery.assignedrider !== null &&
+          delivery.assignedrider !== undefined;
         const isPharmacyBenefit =
           delivery.PharmacyName?.toLowerCase().includes("pharmacy benefit");
 
         if (!isPaid && !isClaimed) {
+          // ispaid === null or 0, and isClaimed === null or 0
           deliveryStatus = "Pending";
-        } else if (isPaid && !isClaimed && !hasAssignedRider) {
+        } else if (isPaid && isNullClaimed && !hasAssignedRider) {
+          // ispaid = 1, and isClaimed = 0, and no rider assigned
           deliveryStatus = "Packed";
-        } else if (isPaid && !isClaimed && hasAssignedRider) {
+        } else if (isPaid && isNullClaimed && hasAssignedRider) {
+          // ispaid = 1, and assignedRider !== null
           deliveryStatus = "Assigned to Rider";
         } else if (isPaid && isClaimed && !isPharmacyBenefit) {
+          // ispaid = 1, and isClaimed = 1, but not pharmacy benefit
           deliveryStatus = "Picked up";
         } else if (isPaid && isClaimed && isPharmacyBenefit) {
+          // ispaid = 1, and isClaimed = 1, and PharmacyName includes "pharmacy benefit"
           deliveryStatus = "Delivered";
         }
 
@@ -195,6 +167,8 @@ export default function PayAutoLineTable({
             localQuantities[String(delivery.EntryNo)] ??
             delivery.ProcedureLines?.[0]?.ProcedureQuantity ??
             1,
+          source: delivery.source || "",
+          DosageDescription: delivery.DosageDescription || "",
           phonenumber: delivery.phonenumber || "N/A",
           cost: delivery.cost || delivery.ProcedureLines?.[0]?.cost || "N/A",
           scheme_type: delivery.scheme_type || "N/A",
@@ -262,7 +236,7 @@ export default function PayAutoLineTable({
           Username: delivery.EnrolleeName || "",
           deliveryaddress: delivery.deliveryaddress || "",
           phonenumber: delivery.phonenumber || "",
-          Pharmacyid: delivery.pharmacyid,
+          Pharmacyid: delivery.Pharmacyid,
           PharmacyName: delivery.PharmacyName,
           EntryNo: delivery.EntryNo,
         };
@@ -914,7 +888,7 @@ export default function PayAutoLineTable({
                           Pharmacy ID
                         </p>
                         <p className="text-sm font-medium">
-                          {viewDetailsModal.delivery.pharmacyid || "N/A"}
+                          {viewDetailsModal.delivery.Pharmacyid || "N/A"}
                         </p>
                       </div>
                     </div>
