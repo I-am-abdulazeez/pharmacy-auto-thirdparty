@@ -71,7 +71,21 @@ export const DELIVERY_COLUMNS = [
 export const AUTOLINE_COLUMNS = [
   { key: "EnrolleeName", label: "Enrollee Name" },
   { key: "procedurename", label: "Procedure" },
+  { key: "procedurequantity", label: "Quantity" },
+  { key: "source", label: "Source" },
   { key: "phonenumber", label: "Phone Number" },
+  { key: "DosageDescription", label: "Dosage Description" },
+  { key: "cost", label: "Cost" },
+  { key: "scheme_type", label: "Scheme" },
+  { key: "ispaid", label: "Status" },
+];
+
+export const AUTOLINE_COLUMNS_WITHOUT_SOURCE = [
+  { key: "EnrolleeName", label: "Enrollee Name" },
+  { key: "procedurename", label: "Procedure" },
+  { key: "procedurequantity", label: "Quantity" },
+  { key: "phonenumber", label: "Phone Number" },
+  { key: "DosageDescription", label: "Dosage Description" },
   { key: "cost", label: "Cost" },
   { key: "scheme_type", label: "Scheme" },
   { key: "ispaid", label: "Status" },
