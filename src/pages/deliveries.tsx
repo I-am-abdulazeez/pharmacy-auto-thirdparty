@@ -209,10 +209,10 @@ export default function DeliveriesPage() {
 
   const handleSubmit = () => {
     // Submit the form for both Acute and Routine (both are single-step now)
-    if (formState.deliveryFrequency == "Acute") {
-      deliveryActions.submitAcuteForm(false);
-    } else {
+    if (selectedMedicationType == "Routine") {
       deliveryActions.submitRoutineForm(false);
+    } else {
+      deliveryActions.submitAcuteForm(false);
     }
   };
 
