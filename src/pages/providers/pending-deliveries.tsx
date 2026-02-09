@@ -12,15 +12,15 @@ import {
 } from "@/lib/services/delivery-service";
 import { deliveryStore } from "@/lib/store/delivery-store";
 import { authStore } from "@/lib/store/app-store";
-import {
-  downloadProviderDeliveriesAsPDF,
-  downloadTableAsPDF,
-} from "@/lib/utils";
 import PayAutoLineTable from "@/components/pay-autoline-table";
 import PageHeader from "@/components/ui/page-header";
 import { DownloadIcon } from "@/components/icons";
 import ProviderPickupsTable from "@/components/pickup/provider-pickup-table";
 import AssignRiderModal from "@/components/rider/assign-rider-modal";
+import {
+  downloadProviderDeliveriesAsExcel,
+  downloadTableAsExcel,
+} from "@/lib/utils/excel-exports";
 
 export default function PendingDeliveriesPage() {
   const {
@@ -90,8 +90,8 @@ export default function PendingDeliveriesPage() {
     }
   };
 
-  const handleDownloadPDF = () => {
-    downloadTableAsPDF(providerDetails || [], showAll);
+  const handleDownloadExcel = () => {
+    downloadTableAsExcel(providerDetails || [], showAll);
   };
 
   const handleSearch = () => {
@@ -229,7 +229,7 @@ export default function PendingDeliveriesPage() {
                 )}
               </div>
 
-              {/* Download PDF Button */}
+              {/* Download Excel Button */}
               <div className="flex gap-3">
                 <Button
                   color="default"
@@ -237,10 +237,10 @@ export default function PendingDeliveriesPage() {
                   startContent={<DownloadIcon />}
                   variant="flat"
                   onPress={() =>
-                    downloadProviderDeliveriesAsPDF(providerDeliveries)
+                    downloadProviderDeliveriesAsExcel(providerDeliveries)
                   }
                 >
-                  Download PDF
+                  Download Excel
                 </Button>
 
                 {/* Assign Rider Button */}
@@ -305,9 +305,9 @@ export default function PendingDeliveriesPage() {
                 isDisabled={(providerDetails || []).length === 0}
                 startContent={<DownloadIcon />}
                 variant="flat"
-                onPress={handleDownloadPDF}
+                onPress={handleDownloadExcel}
               >
-                Download PDF
+                Download Excel
               </Button>
             </div>
 
