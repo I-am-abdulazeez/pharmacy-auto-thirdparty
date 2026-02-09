@@ -289,7 +289,7 @@ export default function ReassignOrClaimPage() {
                     placeholder="Filter by Rider"
                     selectedKey={selectedRider || null}
                     size="sm"
-                    onSelectionChange={(key: string | number) => {
+                    onSelectionChange={(key) => {
                       const riderName = key?.toString() || "";
 
                       handleRiderFilter(riderName);
@@ -408,7 +408,7 @@ export default function ReassignOrClaimPage() {
                 variant="flat"
                 onPress={handleDownloadExcel}
               >
-                Download PDF
+                Download Excel
               </Button>
             </div>
 
