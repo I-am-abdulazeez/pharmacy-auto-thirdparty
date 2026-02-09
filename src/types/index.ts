@@ -135,6 +135,11 @@ export type Delivery = {
   ispaid?: number | null;
   othernumber?: string;
   codetopharmacy?: string | null;
+  memberaddress?: string;
+  isClaimed?: number | null;
+  assignedrider?: string | null
+  assignedrideron?: string | null;
+  source?: string
 };
 
 
