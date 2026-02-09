@@ -40,6 +40,7 @@ export default function PendingDeliveriesPage() {
     null,
   );
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const pharmacyId = user?.provider_id?.toString() || "";
 
@@ -254,12 +255,14 @@ export default function PendingDeliveriesPage() {
             </div>
 
             <ProviderPickupsTable
+              currentPage={currentPage}
               enableSelection={true}
               pickups={providerDeliveries}
               // COMMENTED OUT: Row click handler
               // onRowClick={handleRowClick}
               // NEW: Enable selection for this page only
               selectedKeys={selectedKeys}
+              onPageChange={setCurrentPage}
               onSelectionChange={setSelectedKeys}
             />
 
