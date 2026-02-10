@@ -98,7 +98,7 @@ export const transformApiResponse = (
 
     // Pharmacy and delivery details
     Pharmacyid: apiResponse.pharmacyid || 0,
-    PharmacyName: apiResponse.pharmacyname || "",
+    PharmacyName: apiResponse.Pharmacyname || "",
     deliveryaddress: apiResponse.deliveryaddress || "",
     phonenumber: apiResponse.phonenumber || "",
     othernumber: apiResponse.othernumber || "",
