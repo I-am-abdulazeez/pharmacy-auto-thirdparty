@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -61,7 +61,7 @@ export default function ProviderPickupsTable({
     () =>
       pickups.map((pickup, index) => ({
         key: `${pickup.EnrolleeId}-${index}`,
-        EnrolleeId: pickup.EnrolleeId || "21000645/0",
+        EnrolleeId: pickup.EnrolleeId || "",
         EnrolleeName: pickup.EnrolleeName || "",
         scheme_type: pickup.scheme_type || "",
         Pharmacyname: pickup.Pharmacyname || "",
@@ -74,6 +74,12 @@ export default function ProviderPickupsTable({
   );
 
   const pages = Math.ceil(rows.length / ROWS_PER_PAGE);
+
+  useEffect(() => {
+    if (pages > 0 && page > pages) {
+      setPage(1);
+    }
+  }, [pages]);
 
   const paginatedRows = useMemo(() => {
     const start = (page - 1) * ROWS_PER_PAGE;
