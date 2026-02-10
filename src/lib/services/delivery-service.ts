@@ -525,7 +525,7 @@ export const createAcuteDelivery = async (
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(deliveryData),
+      body: JSON.stringify({ ...deliveryData, isthirdparty: 1 }),
     });
 
     const data = await response.json();
