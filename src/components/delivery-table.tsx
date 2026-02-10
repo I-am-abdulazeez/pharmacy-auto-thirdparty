@@ -242,8 +242,34 @@ export default function DeliveryTable({
         // Determine delivery status
         let deliveryStatus = "Pending";
 
-        if (delivery.IsDelivered) {
+        const isPaid = delivery.ispaid === 1;
+        const isClaimed = delivery.isClaimed === 1;
+        const isNullClaimed = delivery.isClaimed === null;
+        const hasAssignedRider =
+          delivery.assignedrider !== null &&
+          delivery.assignedrider !== undefined;
+        const isPharmacyBenefit =
+          delivery.PharmacyName?.toLowerCase().includes("pharmacy benefit");
+
+        if (!isPaid && !isClaimed) {
+          // ispaid === null or 0, and isClaimed === null or 0
+          deliveryStatus = "Pending";
+        } else if (isPaid && isNullClaimed && !hasAssignedRider) {
+          // ispaid = 1, and isClaimed = 0, and no rider assigned
+          deliveryStatus = "Packed";
+        } else if (isPaid && isNullClaimed && hasAssignedRider) {
+          // ispaid = 1, and assignedRider !== null
+          deliveryStatus = "Assigned to Rider";
+        } else if (isPaid && isClaimed && !isPharmacyBenefit) {
+          // ispaid = 1, and isClaimed = 1, but not pharmacy benefit
           deliveryStatus = "Picked up";
+        } else if (isPaid && isClaimed && isPharmacyBenefit) {
+          // ispaid = 1, and isClaimed = 1, and PharmacyName includes "pharmacy benefit"
+          deliveryStatus = "Delivered";
+        }
+
+        if (delivery.IsDelivered && !isPharmacyBenefit) {
+          deliveryStatus = "sjsjsj";
         } else if (!delivery.IsDelivered && delivery.codeexpirydate) {
           const expiryDate = new Date(delivery.codeexpirydate);
           const today = new Date();
