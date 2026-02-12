@@ -35,6 +35,9 @@ import AdditionalInfoStep from "@/components/deliveries/additional-setup";
 import AssignPharmacyModal from "@/components/assign-pendings/assign-pharmacy-modal";
 import { payAutoLine } from "@/lib/services/payautoline-services";
 import { downloadTableAsExcel } from "@/lib/utils/excel-exports";
+import { sendPhaEmailAlert } from "@/lib/services/mail-service";
+import { sendSms } from "@/lib/services/sms-service";
+import { generateRandomCode } from "@/lib/utils";
 
 export default function PendingCollectionsPage() {
   const {
@@ -152,7 +155,6 @@ export default function PendingCollectionsPage() {
         return;
       }
 
-      // Get enrollee ID (should be same for all selected)
       const enrolleeIdFromDelivery =
         selectedDeliveries[0]?.EnrolleeId || selectedEnrolleeId || "";
 
@@ -162,7 +164,72 @@ export default function PendingCollectionsPage() {
         return;
       }
 
+      // Use first delivery for common enrollee info
+      const firstDelivery = selectedDeliveries[0];
+
+      // Generate pickup code (shared for all deliveries for this enrollee)
+      const pickupCode = firstDelivery.codetopharmacy || generateRandomCode();
+
+      // Validate phone number
+      if (!firstDelivery.phonenumber) {
+        toast.error("Phone number is missing. Cannot send notifications.");
+
+        return;
+      }
+
+      // Aggregate ALL procedures and diagnoses from ALL selected deliveries
+      const procedureNames = selectedDeliveries
+        .flatMap((d) => d.ProcedureLines || [])
+        .map((p) => p.ProcedureName)
+        .filter(Boolean);
+
+      const diagnosisNames = selectedDeliveries
+        .flatMap((d) => d.DiagnosisLines || [])
+        .map((d) => d.DiagnosisName)
+        .filter(Boolean);
+
+      // Aggregate dosage descriptions
+      const dosageDescriptions = selectedDeliveries
+        .map((d) => d.DosageDescription)
+        .filter(Boolean)
+        .join("; ");
+
+      // Build email template with aggregated data
+      const emailTemplateData = {
+        procedureName: procedureNames,
+        diagnosisName: diagnosisNames,
+        enrolleeName: firstDelivery.EnrolleeName || "",
+        enrolleeId: firstDelivery.EnrolleeId || "",
+        deliveryAddress: pickupCode,
+        phoneNumber: firstDelivery.phonenumber || "",
+        deliveryFrequency: firstDelivery.DeliveryFrequency || "",
+        startDate: firstDelivery.DelStartDate || "",
+        nextDeliveryDate: firstDelivery.NextDeliveryDate || "",
+        endDate: firstDelivery.EndDate || "",
+        pharmacyName: firstDelivery.PharmacyName || "",
+        cost: totalCost.toString(), // Total cost of all deliveries
+        dosageDescription: dosageDescriptions,
+        additionalInformation: firstDelivery.AdditionalInformation || "",
+        comment: firstDelivery.Comment || "",
+        selectedDeliveries: selectedDeliveries, // Pass all deliveries for detailed email
+        email: firstDelivery.email,
+      };
+
+      const smsMessage = `Your pharmacy pickup code is: ${pickupCode}. You have ${selectedDeliveries.length} medication(s) ready. Please use this code to collect them. Thank you.`;
+
+      const smsPayload = {
+        To: firstDelivery.phonenumber,
+        Message: smsMessage,
+        Source: "Pharmacy Delivery",
+        SourceId: user?.User_id || 0,
+        TemplateId: 0,
+        PolicyNumber: firstDelivery.EnrolleeId || "",
+        ReferenceNo: pickupCode,
+        UserId: user?.User_id || 0,
+      };
+
       setIsPaymentLoading(true);
+
       try {
         const entryNumbers = selectedDeliveries.map((d) => String(d.EntryNo));
 
@@ -177,22 +244,53 @@ export default function PendingCollectionsPage() {
         toast.success(
           `Successfully marked ${selectedDeliveries.length} delivery(s) as paid. Total: ₦${totalCost.toFixed(2)}`,
         );
-        setSelectedKeys(new Set());
 
-        // Refresh current details view
+        setSelectedKeys(new Set());
         handleRefresh();
 
-        // Also refresh the main pickups list in background
         if (pharmacyId) {
           getProviderPickups(pharmacyId, showAll);
         }
+
+        // Send ONE aggregated notification
+        const notificationResults = await Promise.allSettled([
+          sendPhaEmailAlert(emailTemplateData),
+          sendSms(smsPayload),
+        ]);
+
+        const emailResult = notificationResults[0];
+        const smsResult = notificationResults[1];
+
+        if (emailResult.status === "rejected") {
+          console.error("Email notification failed:", emailResult.reason);
+          toast.error("Email notification failed, but payment was successful", {
+            duration: 4000,
+          });
+        }
+
+        if (smsResult.status === "rejected") {
+          console.error("SMS notification failed:", smsResult.reason);
+          toast.error("SMS notification failed, but payment was successful", {
+            duration: 4000,
+          });
+        }
+
+        if (
+          emailResult.status === "fulfilled" &&
+          smsResult.status === "fulfilled"
+        ) {
+          toast.success("Payment successful and notifications sent!", {
+            duration: 4000,
+          });
+        }
       } catch (error) {
+        console.error("Payment failed:", error);
         toast.error(`Payment failed: ${(error as Error).message}`);
       } finally {
         setIsPaymentLoading(false);
       }
     },
-    [pharmacyId, selectedEnrolleeId, showAll, handleRefresh],
+    [pharmacyId, selectedEnrolleeId, showAll, handleRefresh, user?.User_id],
   );
 
   const handleOpenChange = (isOpen: boolean) => {
