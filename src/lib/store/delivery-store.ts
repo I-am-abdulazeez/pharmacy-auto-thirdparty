@@ -715,7 +715,7 @@ export const deliveryActions = {
           diagnosisName: delivery.DiagnosisLines.map(value => value.DiagnosisName),
           enrolleeName: delivery.EnrolleeName,
           enrolleeId: delivery.EnrolleeId,
-          deliveryAddress: delivery.deliveryaddress,
+          deliveryAddress: delivery.deliveryaddress || "",
           phoneNumber: delivery.phonenumber!
         };
         const shouldSkipNavigation = !confirmDuplicates;
