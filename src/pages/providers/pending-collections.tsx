@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useChunkValue } from "stunk/react";
 import { Spinner } from "@heroui/spinner";
 import { Switch } from "@heroui/switch";
-import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Selection } from "@heroui/table";
 import {
@@ -13,6 +12,7 @@ import {
   ModalHeader,
 } from "@heroui/modal";
 import toast from "react-hot-toast";
+import { Input } from "@heroui/input";
 
 import {
   getProviderPickups,
@@ -213,9 +213,16 @@ export default function PendingCollectionsPage() {
         comment: firstDelivery.Comment || "",
         selectedDeliveries: selectedDeliveries, // Pass all deliveries for detailed email
         email: firstDelivery.email,
+        memberaddress: firstDelivery.memberaddress,
       };
 
-      const smsMessage = `Your pharmacy pickup code is: ${pickupCode}. You have ${selectedDeliveries.length} medication(s) ready. Please use this code to collect them. Thank you.`;
+      // Determine SMS message based on time of day
+      const currentHour = new Date().getHours();
+      const isWorkHours = currentHour < 16; // Before 4pm
+
+      const smsMessage = isWorkHours
+        ? `Your meds are on the way! Show this OTP to rider: ${pickupCode}. Delivery arriving soon. Questions? Call us on 09015491854. Leadway HMO.`
+        : `We just received your medication request, delivery will likely be done tomorrow, we promise to come in time. Show this OTP to rider: ${pickupCode}. Questions? Call 09015491854. Leadway HMO.`;
 
       const smsPayload = {
         To: firstDelivery.phonenumber,
@@ -279,7 +286,7 @@ export default function PendingCollectionsPage() {
           emailResult.status === "fulfilled" &&
           smsResult.status === "fulfilled"
         ) {
-          toast.success("Payment successful and notifications sent!", {
+          toast.success("Packed successfully and notifications sent!", {
             duration: 4000,
           });
         }
