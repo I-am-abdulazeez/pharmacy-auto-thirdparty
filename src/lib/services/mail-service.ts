@@ -32,6 +32,7 @@ export interface EmailTemplateData {
   enrolleeId: string;
   deliveryAddress?: string;
   phoneNumber: string;
+  email?: string;
 }
 
 
@@ -374,8 +375,8 @@ export const sendPhaEmailAlert = async (templateData: EmailTemplateData, attachm
     }
 
     const emailPayload: EmailPayload = {
-      EmailAddress: "Pharmacybenefitmgt@leadway.com",
-      CC: "",
+      EmailAddress: templateData.email || "",
+      CC: "Pharmacybenefitmgt@leadway.com",
       BCC: "",
       Subject: `Pharmacy Pickup - ${templateData.enrolleeName} (${templateData.enrolleeId})`,
       MessageBody: getPharmacyDeliveryEmailTemplate(templateData),
