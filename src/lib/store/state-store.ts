@@ -1,7 +1,7 @@
 import { asyncChunk } from "stunk";
 import toast from "react-hot-toast";
 
-import { API_URL } from "../utils";
+import { API_URL, getAuthHeaders } from "../utils";
 
 export type State = {
   Disabled: boolean;
@@ -13,7 +13,9 @@ export type State = {
 
 export const statesChunk = asyncChunk(
   async () => {
-    const response = await fetch(`${API_URL}/ListValues/GetStates`);
+    const response = await fetch(`${API_URL}/ListValues/GetStates`, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch states: ${response.status}`);
@@ -47,7 +49,9 @@ export const citiesChunk = asyncChunk(async ({ stateId }: { stateId: string }) =
   }
 
   try {
-    const response = await fetch(`${API_URL}/ListValues/GetCitiesByStates?state=${stateId}`);
+    const response = await fetch(`${API_URL}/ListValues/GetCitiesByStates?state=${stateId}`, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch cities: ${response.status}`);
