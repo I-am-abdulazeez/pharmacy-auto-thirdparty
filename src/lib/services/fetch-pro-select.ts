@@ -1,6 +1,6 @@
 import { toast } from "react-hot-toast";
 
-import { API_URL } from "@/lib/utils";
+import { API_URL, getAuthHeaders } from "@/lib/utils";
 import { Provider } from "@/types";
 
 interface ProviderApiItem {
@@ -41,7 +41,9 @@ export async function fetchSelectProviders(
 
     const url = `${apiUrl}?${params.toString()}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch providers: ${response.status}`);

@@ -1,4 +1,4 @@
-import { API_URL } from "../utils";
+import { API_URL, getAuthHeaders } from "../utils";
 
 export type ProviderData = {
   pageSize: number;
@@ -44,7 +44,9 @@ export const fetchProvider = async ({
     provider_id: "0"
   });
 
-  const response = await fetch(`${apiUrl}?${params.toString()}`);
+  const response = await fetch(`${apiUrl}?${params.toString()}`, {
+    headers: await getAuthHeaders()
+  });
 
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);

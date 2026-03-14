@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 
-import { API_URL } from "@/lib/utils";
+import { API_URL, getAuthHeaders } from "@/lib/utils";
 import { appChunk, SearchCriteria } from "@/lib/store/app-store";
 
 
@@ -62,7 +62,9 @@ export const getEnrolleeById = async (
 ): Promise<EnrolleeResponse | null> => {
   try {
     const apiUrl = `${API_URL}/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid=${enrolleeId}`
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch enrollee data: ${response.status}`);
@@ -116,7 +118,9 @@ export const getEnrolleeByMultipleFields = async (
 
     const apiUrl = `${API_URL}/EnrolleeProfile/GetEnrolleeBioDataByDetails?${queryParams.toString()}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch enrollee data: ${response.status}`);
@@ -143,7 +147,9 @@ export const getEnrolleeBenefitsBycif = async (
 ): Promise<EnrolleeBenefitResponse | null> => {
   try {
     const apiUrl = `${API_URL}/EnrolleeProfile/GetEnrolleeBenefitsByCif_ChronicMedicines?cifno=${cif}`
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch enrollee data: ${response.status}`);

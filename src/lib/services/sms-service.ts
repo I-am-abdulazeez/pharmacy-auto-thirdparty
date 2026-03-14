@@ -1,4 +1,4 @@
-import { API_URL } from "../utils";
+import { API_URL, getAuthHeaders } from "../utils";
 
 export interface SmsPayload {
   To: string;
@@ -20,9 +20,7 @@ export const sendSms = async (smsPayload: SmsPayload): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/Sms/SendSms`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(smsPayload),
     });
 

@@ -1,4 +1,4 @@
-import { API_URL } from "../utils";
+import { API_URL, getAuthHeaders } from "../utils";
 
 /**
  * Marks selected deliveries as paid
@@ -26,9 +26,7 @@ export const payAutoLine = async (
 
     const response = await fetch(`${API_URL}/PharmacyDelivery/PayAutoline`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 

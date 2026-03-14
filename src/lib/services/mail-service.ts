@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 
-import { API_URL, createAttachmentFromFile } from "../utils";
+import { API_URL, createAttachmentFromFile, getAuthHeaders } from "../utils";
 import { appChunk, authStore } from "../store/app-store";
 
 export type EmailPayload = {
@@ -970,9 +970,7 @@ export const sendEmailAlert = async (templateData: EmailTemplateData, attachment
       `${API_URL}/EnrolleeProfile/SendEmailAlert`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify(emailPayload),
       }
     );
@@ -1026,11 +1024,9 @@ export const sendPhaEmailAlert = async (templateData: EmailTemplateData, attachm
       `${API_URL}/EnrolleeProfile/SendEmailAlert`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify(emailPayload),
-      }
+      },
     );
 
     if (!response.ok) {

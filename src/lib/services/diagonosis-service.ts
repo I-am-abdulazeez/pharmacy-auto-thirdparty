@@ -1,6 +1,6 @@
 import { toast } from "react-hot-toast";
 
-import { API_URL } from "@/lib/utils";
+import { API_URL, getAuthHeaders } from "@/lib/utils";
 import { Diagnosis } from "@/types";
 
 type DiagnosisApiItem = {
@@ -45,7 +45,9 @@ let isLoading = false;
 
 async function fetchAllDiagnosesFromAPI(): Promise<Diagnosis[]> {
   const apiUrl = `${API_URL}/ListValues/GetAllDiagnosis`;
-  const response = await fetch(apiUrl);
+  const response = await fetch(apiUrl, {
+    headers: await getAuthHeaders()
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch diagnoses");

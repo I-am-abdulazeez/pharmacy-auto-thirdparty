@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 
-import { API_URL } from "../utils";
+import { API_URL, getAuthHeaders } from "../utils";
 
 export interface Rider {
   rider_id: number;
@@ -101,9 +101,7 @@ export const assignRiderToDeliveries = async (
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 

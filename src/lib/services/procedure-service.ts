@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 
 import { deliveryFormState } from "../store/delivery-store";
 
-import { API_URL } from "@/lib/utils";
+import { API_URL, getAuthHeaders } from "@/lib/utils";
 
 interface ProcedureApiItem {
   tariff_code: string;
@@ -56,7 +56,9 @@ export async function getProcedures(
     const searchParam = searchTerm ? encodeURIComponent(searchTerm) : '';
     const apiUrl = `${API_URL}/ProviderNetwork/GetProceduresByFilter?filtertype=3&providerid=8520&searchbyname=${searchParam}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch procedures: ${response.status}`);
