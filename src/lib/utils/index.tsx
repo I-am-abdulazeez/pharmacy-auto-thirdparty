@@ -2,6 +2,7 @@ import { parseDate } from "@internationalized/date";
 
 import { Attachment } from "../services/mail-service";
 import { ProviderPickup } from "../services/delivery-service";
+import { getApiToken } from "../services/api-auth";
 
 import { Delivery, DeliveryApiResponse } from "@/types";
 
@@ -9,6 +10,19 @@ export const API_URL = import.meta.env.VITE_PROGNOSIS_API_URL;
 export const WELLA_API_URL = import.meta.env.VITE_WELLA_API_URL;
 export const WELLA_HEALTH_USERNAME = import.meta.env.VITE_WELLA_HEALTH_USERNAME;
 export const WELLA_HEALTH_PASSWORD = import.meta.env.VITE_WELLA_HEALTH_PASSWORD;
+
+/**
+ * Returns headers with the API bearer token injected.
+ * Always call this instead of hardcoding headers in services.
+ */
+export const getAuthHeaders = async (): Promise<HeadersInit> => {
+  const token = await getApiToken();
+
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
 
 export const safeGet = (value: any, fallback: any) => {
   return value !== undefined && value !== null ? value : fallback;

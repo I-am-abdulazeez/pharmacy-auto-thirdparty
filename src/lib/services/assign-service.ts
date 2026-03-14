@@ -1,7 +1,7 @@
 import toast from "react-hot-toast";
 
 import { assignPendingsStore } from "../store/assign-pendings-store";
-import { API_URL, transformApiResponse } from "../utils";
+import { API_URL, getAuthHeaders, transformApiResponse } from "../utils";
 
 export interface PendingEnrollee {
   EnrolleeName: string;
@@ -36,9 +36,7 @@ export const assignMultiplePharmacies = async (
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(payloads),
     });
 
@@ -96,9 +94,7 @@ export const assignPharmacy = async (
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 
@@ -147,7 +143,9 @@ export const getPendingEnrollees = async (): Promise<any> => {
 
     const apiUrl = `${API_URL}/Pharmacy/GetPending_Autopayment`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -204,7 +202,9 @@ export const getPendingEnrolleeDetails = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPending_Autopayment?enrolleeid=${enrolleeId}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -263,7 +263,9 @@ export const getLagosPendingEnrollees = async (): Promise<any> => {
 
     const apiUrl = `${API_URL}/Pharmacy/GetPending_Autopayment?enrolleeid=null&islagos=1`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -320,7 +322,9 @@ export const getLagosPendingEnrolleeDetails = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPending_Autopayment?enrolleeid=${enrolleeId}&islagos=1`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);

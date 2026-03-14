@@ -1,7 +1,7 @@
 import toast from "react-hot-toast";
 
 import { authStore } from "../store/app-store";
-import { API_URL } from "../utils";
+import { API_URL, getAuthHeaders } from "../utils";
 
 import { BaseForm, LoginResponse } from "@/types";
 
@@ -29,9 +29,7 @@ export const loginLeadway = async (
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(apiPayload),
     });
 
@@ -96,9 +94,7 @@ export const loginProvider = async (
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(apiPayload),
     });
 

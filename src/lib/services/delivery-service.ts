@@ -2,7 +2,7 @@ import toast from "react-hot-toast";
 import { Dispatch, SetStateAction } from "react";
 
 import { deliveryStore } from "../store/delivery-store";
-import { API_URL, transformApiResponse } from "../utils";
+import { API_URL, getAuthHeaders, transformApiResponse } from "../utils";
 
 import { EmailTemplateData, sendEmailAlert } from "./mail-service";
 
@@ -56,7 +56,9 @@ export const getDeliveries = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders(),
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -130,7 +132,9 @@ export const getProviderPickups = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment_Provider?${params.toString()}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -197,7 +201,9 @@ export const getPickupDetails = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -264,7 +270,9 @@ export const getReassignDeliveries = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment_Provider?${params.toString()}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -329,7 +337,9 @@ export const getReassignDetails = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -396,7 +406,9 @@ export const getProviderDeliveries = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment_Provider?${params.toString()}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -462,7 +474,9 @@ export const getDeliveriesDetails = async (
 
     const apiUrl = `${API_URL}/Pharmacy/GetPharmacyAutopayment?${params.toString()}`;
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: await getAuthHeaders()
+    });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status} - ${response.statusText}`);
@@ -522,9 +536,7 @@ export const createAcuteDelivery = async (
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify({ ...deliveryData, isthirdparty: 1 }),
     });
 
@@ -596,9 +608,7 @@ export const createRoutineDelivery = async (
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(deliveryData),
     });
 
@@ -662,9 +672,7 @@ export const editDelivery = async (formData: any): Promise<any> => {
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(formData),
     });
 
@@ -728,9 +736,7 @@ export const deleteDelivery = async (
       `${API_URL}/PharmacyDelivery/DeletePickupLine`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify(deleteData),
       }
     );
@@ -775,9 +781,7 @@ export const restoreDelivery = async (data: {
   try {
     const response = await fetch(`${API_URL}/Pharmacy/RestoreDateexpiryAutopaymentRequest`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: await getAuthHeaders(),
       body: JSON.stringify(data),
     });
 

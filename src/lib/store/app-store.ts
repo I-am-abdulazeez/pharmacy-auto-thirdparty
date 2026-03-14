@@ -5,6 +5,11 @@ import { EnrolleeData } from "../services/enrollee-service";
 
 import { User } from "@/types";
 
+type ApiTokenState = {
+  token: string | null;
+  expires: string | null;
+};
+
 export type SearchCriteria = {
   enrolleeId: string;
   firstName: string;
@@ -70,6 +75,11 @@ export const clearSearchCriteria = () => {
     enrolleeData: null
   }));
 };
+
+export const apiTokenStore = withPersistence(chunk<ApiTokenState>({
+  token: null,
+  expires: null,
+}), { key: "data_token" });
 
 export const logout = () => {
   authStore.reset()
